@@ -17,8 +17,8 @@ import {
 import { ROLE_LABEL, type AppRole } from "@/lib/cab";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search.mode === "signup" ? ("signup" as const) : ("signin" as const),
+  validateSearch: (search: Record<string, unknown>): { mode?: "signup" | "signin" | undefined } => ({
+    mode: search["mode"] === "signup" ? "signup" : undefined,
   }),
   head: () => ({
     meta: [
