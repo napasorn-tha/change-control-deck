@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Check, FileUp, X } from "lucide-react";
@@ -33,6 +33,7 @@ import {
   fmtDate,
   fmtDateTime,
   logActivity,
+  nextRequestCode,
   riskLevelFromScore,
   sectionsForChangeType,
   statusLabel,
@@ -165,6 +166,7 @@ function RequestDetail() {
 function NextAction({ request: r, documents, conditions, risk }: { request: CabRequest; documents: CabDocument[]; conditions: Condition[]; risk: Risk | null }) {
   const actor = useActor();
   const refresh = useInvalidateAll();
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const uploaded = documents.filter((d) => d.file_path).length;
   const allDocs = uploaded >= DOC_TYPES.length;
@@ -175,6 +177,62 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   async function run(fn: () => Promise<void>) {
     setBusy(true);
     try { await fn(); await refresh(); } catch (e) { toast.error(e instanceof Error ? e.message : "Action failed"); } finally { setBusy(false); }
+  }
+
+  async function duplicateAsNewCab() {
+    const { data: existing, error: codeError } = await supabase
+      .from("cab_requests")
+      .select("request_code");
+    if (codeError) throw codeError;
+
+    const code = nextRequestCode((existing ?? []).map((item) => item.request_code));
+    const { data: copy, error } = await supabase
+      .from("cab_requests")
+      .insert({
+        request_code: code,
+        project_id: r.project_id,
+        project_code: r.project_code,
+        project_name: r.project_name,
+        topic: `${r.topic} (copy)`,
+        pm_ba_lead: r.pm_ba_lead,
+        change_type: r.change_type,
+        description: r.description,
+        developer_id: r.developer_id ?? actor.id,
+        developer_name: r.developer_name ?? actor.name,
+        status: "DRAFT",
+        readiness_score: 0,
+        cab_date: null,
+        target_deploy_date: null,
+        target_golive_date: null,
+        risk_level: null,
+        risk_score: null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+
+    const { error: docsError } = await supabase
+      .from("cab_documents")
+      .insert(
+        DOC_TYPES.map((doc) => ({
+          request_id: copy.id,
+          doc_type: doc.value,
+          review_status: "missing",
+        })),
+      );
+    if (docsError) throw docsError;
+
+    await logActivity({
+      request_id: copy.id,
+      actor_id: actor.id,
+      actor_name: actor.name,
+      action: "Request duplicated",
+      comment: `Created from closed request ${r.request_code}`,
+      to_status: "DRAFT",
+    });
+
+    toast.success(`${code} created from ${r.request_code}`);
+    void navigate({ to: "/requests/$id", params: { id: copy.id } });
   }
 
   let text = "";
@@ -232,7 +290,22 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   } else if (st === "DEPLOY_FAILED" || st === "INCIDENT") {
     text = "Deployment failed. Complete the incident RCA below.";
   } else if (st === "CLOSED") {
-    text = "This change is closed.";
+    text = "This change is closed and preserved for audit history.";
+    const canDuplicate =
+      actor.role === "admin" ||
+      (actor.id != null && actor.id === r.developer_id);
+
+    if (canDuplicate) {
+      buttons = (
+        <Button
+          variant="outline"
+          disabled={busy}
+          onClick={() => run(duplicateAsNewCab)}
+        >
+          Duplicate as new CAB
+        </Button>
+      );
+    }
   }
 
   return (
