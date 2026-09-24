@@ -15,6 +15,9 @@ type AuthValue = {
   session: Session | null;
   profile: Profile | null;
   role: AppRole | null;
+  actualRole: AppRole | null;
+  demoRole: AppRole | null;
+  setDemoRole: (role: AppRole | null) => void;
   loading: boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -25,6 +28,9 @@ const AuthContext = createContext<AuthValue>({
   session: null,
   profile: null,
   role: null,
+  actualRole: null,
+  demoRole: null,
+  setDemoRole: () => {},
   loading: true,
   signOut: async () => {},
   refresh: async () => {},
@@ -33,7 +39,12 @@ const AuthContext = createContext<AuthValue>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [role, setRole] = useState<AppRole | null>(null);
+  const [actualRole, setActualRole] = useState<AppRole | null>(null);
+  const [demoRole, setDemoRoleState] = useState<AppRole | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = window.sessionStorage.getItem("cab360-demo-role") as AppRole | null;
+    return saved && saved !== "admin" ? saved : null;
+  });
   const [loading, setLoading] = useState(true);
 
   async function load(userId: string) {
@@ -50,7 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       "deployment_coordinator",
       "developer",
     ];
-    setRole(priority.find((x) => roles.includes(x)) ?? "developer");
+    const resolved = priority.find((x) => roles.includes(x)) ?? "developer";
+    setActualRole(resolved);
+    if (resolved !== "admin") {
+      setDemoRoleState(null);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("cab360-demo-role");
+      }
+    }
   }
 
   useEffect(() => {
@@ -61,7 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s?.user) void load(s.user.id);
       else {
         setProfile(null);
-        setRole(null);
+        setActualRole(null);
+        setDemoRoleState(null);
       }
     });
     void supabase.auth.getSession().then(async ({ data }) => {
@@ -76,6 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const role =
+    actualRole === "admin" && demoRole && demoRole !== "admin"
+      ? demoRole
+      : actualRole;
+
+  function setDemoRole(role: AppRole | null) {
+    if (actualRole !== "admin") return;
+    const next = role && role !== "admin" ? role : null;
+    setDemoRoleState(next);
+    if (typeof window !== "undefined") {
+      if (next) window.sessionStorage.setItem("cab360-demo-role", next);
+      else window.sessionStorage.removeItem("cab360-demo-role");
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -83,6 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         profile,
         role,
+        actualRole,
+        demoRole,
+        setDemoRole,
         loading,
         signOut: async () => {
           await supabase.auth.signOut();
