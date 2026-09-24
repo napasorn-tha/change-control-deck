@@ -135,6 +135,38 @@ export const REVIEW_SECTIONS = {
 
 export type ReviewSection = keyof typeof REVIEW_SECTIONS;
 
+export const QA_SOURCES = [
+  { value: "DQA", label: "DQA" },
+  { value: "END_USER", label: "End User" },
+  { value: "OTHER", label: "Other" },
+] as const;
+
+export const QA_TEST_STATUSES = [
+  { value: "PENDING", label: "Pending" },
+  { value: "PASSED", label: "Passed" },
+  { value: "FAILED", label: "Failed" },
+] as const;
+
+export const QA_APPROVAL_STATUSES = [
+  { value: "NOT_REQUIRED", label: "Not Required" },
+  { value: "PENDING", label: "Pending Approval" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "REJECTED", label: "Rejected" },
+] as const;
+
+export function isQaGatePassed(request: {
+  qa_source?: string | null;
+  qa_test_status?: string | null;
+  qa_approval_status?: string | null;
+}) {
+  return (
+    !!request.qa_source &&
+    request.qa_test_status === "PASSED" &&
+    (request.qa_approval_status === "APPROVED" ||
+      request.qa_approval_status === "NOT_REQUIRED")
+  );
+}
+
 export const ISSUE_CATEGORIES = [
   "No Finding / No Issue",
   "Data Type Standard",

@@ -24,6 +24,9 @@ import {
   ENVIRONMENTS,
   ISSUE_CATEGORIES,
   REVIEW_SECTIONS,
+  QA_SOURCES,
+  QA_TEST_STATUSES,
+  QA_APPROVAL_STATUSES,
   computeRiskScore,
   fmtDate,
   fmtDateTime,
@@ -120,7 +123,8 @@ function RequestDetail() {
           </div>
         </Card>
         <div className="lg:col-span-2 space-y-5">
-          <DocumentsCard request={r} documents={data.documents} />
+            <QAGateCard request={r} />
+            <DocumentsCard request={r} documents={data.documents} />
           {(["IN_REVIEW"].includes(r.status) || data.reviews.length > 0) && (
             <TechnicalReviewCard request={r} reviews={data.reviews} />
           )}
@@ -161,6 +165,8 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   const [busy, setBusy] = useState(false);
   const uploaded = documents.filter((d) => d.file_path).length;
   const allDocs = uploaded >= DOC_TYPES.length;
+  const qaReady = isQaGatePassed(r);
+  const cabReady = allDocs && qaReady;
   const required = conditions.filter((c) => c.required);
 
   async function run(fn: () => Promise<void>) {
@@ -173,12 +179,26 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   const st = r.status as CabStatus;
 
   if (st === "DRAFT" || st === "DOCUMENTS_PENDING" || st === "NOT_APPROVED") {
-    text = allDocs
-      ? st === "NOT_APPROVED" ? "Fix the findings, update documents, then resubmit for a new CAB review." : "All documents uploaded. Submit to CAB."
-      : `Upload all required documents (${uploaded}/${DOC_TYPES.length}) before submitting.`;
+  if (!allDocs) {
+  text = `Upload all required documents (${uploaded}/${DOC_TYPES.length}) before submitting.`;
+} else if (!r.qa_source) {
+  text = "All documents uploaded. Complete the QA Gate before submitting to CAB.";
+} else if (r.qa_test_status !== "PASSED") {
+  text = `CAB blocked — QA test status is ${r.qa_test_status.toLowerCase()}.`;
+} else if (
+  r.qa_approval_status !== "APPROVED" &&
+  r.qa_approval_status !== "NOT_REQUIRED"
+) {
+  text = "CAB blocked — QA approval is not yet satisfied.";
+} else {
+  text =
+    st === "NOT_APPROVED"
+      ? "Requirements complete. Update the findings and resubmit for CAB review."
+      : "All evidences and QA requirements complete. Ready to submit to CAB.";
+}
     if (can(actor.role, "developer"))
       buttons = (
-        <Button disabled={busy || !allDocs} onClick={() => run(async () => {
+        <Button disabled={busy || !cabReady} onClick={() => run(async () => {
           // Reset document reviews on resubmission so CAB reviews again.
           if (st === "NOT_APPROVED") await supabase.from("cab_documents").update({ review_status: "pending" }).eq("request_id", r.id).not("file_path", "is", null);
           await transition(r.id, st, "READY_FOR_CAB", actor, st === "NOT_APPROVED" ? "Resubmitted to CAB after fix" : "Submitted to CAB", null, { submitted_at: new Date().toISOString(), readiness_score: 100 });
@@ -217,6 +237,133 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
       <p className="text-sm"><span className="font-semibold">Next step · </span>{text}</p>
       {buttons}
     </div>
+  );
+}
+
+function QAGateCard({ request: r }: { request: CabRequest }) {
+  const actor = useActor();
+  const refresh = useInvalidateAll();
+
+  const editable =
+    ["DRAFT", "DOCUMENTS_PENDING", "NOT_APPROVED"].includes(r.status) &&
+    can(actor.role, "developer");
+
+  const [source, setSource] = useState(r.qa_source ?? "");
+  const [testStatus, setTestStatus] = useState(
+    r.qa_test_status ?? "PENDING",
+  );
+  const [approvalStatus, setApprovalStatus] = useState(
+    r.qa_approval_status ?? "PENDING",
+  );
+
+  const passed =
+    !!source &&
+    testStatus === "PASSED" &&
+    (approvalStatus === "APPROVED" ||
+      approvalStatus === "NOT_REQUIRED");
+
+  async function save() {
+    if (!source) return toast.error("Select a QA source");
+
+    const { error } = await supabase
+      .from("cab_requests")
+      .update({
+        qa_source: source,
+        qa_test_status: testStatus,
+        qa_approval_status: approvalStatus,
+      })
+      .eq("id", r.id);
+
+    if (error) return toast.error(error.message);
+
+    await logActivity({
+      request_id: r.id,
+      actor_id: actor.id,
+      actor_name: actor.name,
+      action: "QA gate updated",
+      comment: `${source} · ${testStatus} · ${approvalStatus}`,
+    });
+
+    toast.success("QA gate updated");
+    await refresh();
+  }
+
+  return (
+    <Card
+      title="QA Gate"
+      description="QA must be completed before this request can enter CAB review."
+      actions={
+        <Pill tone={passed ? "success" : "warning"}>
+          {passed ? "QA Gate Passed" : "CAB Blocked"}
+        </Pill>
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <Label className="text-xs">QA Source</Label>
+          <select
+            disabled={!editable}
+            className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+          >
+            <option value="">Select source…</option>
+            {QA_SOURCES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label className="text-xs">QA Test Status</Label>
+          <select
+            disabled={!editable}
+            className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={testStatus}
+            onChange={(e) => setTestStatus(e.target.value)}
+          >
+            {QA_TEST_STATUSES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label className="text-xs">QA Approval Status</Label>
+          <select
+            disabled={!editable}
+            className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={approvalStatus}
+            onChange={(e) => setApprovalStatus(e.target.value)}
+          >
+            {QA_APPROVAL_STATUSES.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {editable && (
+        <div className="mt-3 flex justify-end">
+          <Button size="sm" onClick={save}>
+            Save QA Gate
+          </Button>
+        </div>
+      )}
+
+      {!passed && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          CAB submission remains blocked until QA has passed and the required
+          approval is satisfied.
+        </p>
+      )}
+    </Card>
   );
 }
 
