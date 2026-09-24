@@ -99,6 +99,7 @@ function navFor(role: AppRole | null): NavItem[] {
       icon: AlertTriangle,
     },
     { label: "Deployment Status", to: "/deployments", icon: Truck },
+    { label: "Deployment Calendar", to: "/deployments/calendar", icon: CalendarDays },
     { label: "Activity History", to: "/activity", icon: History },
   ];
 }
