@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedDeploymentsRouteImport } from './routes/_authenticated/deployments'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedRequestsIndexRouteImport } from './routes/_authenticated/requests.index'
@@ -44,6 +45,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeploymentsRoute =
+  AuthenticatedDeploymentsRouteImport.update({
+    id: '/deployments',
+    path: '/deployments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deployments': typeof AuthenticatedDeploymentsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -88,6 +96,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/deployments': typeof AuthenticatedDeploymentsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -101,6 +110,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/deployments': typeof AuthenticatedDeploymentsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/deployments'
     | '/documents'
     | '/projects'
     | '/requests/$id'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/activity'
     | '/dashboard'
+    | '/deployments'
     | '/documents'
     | '/projects'
     | '/requests/$id'
@@ -137,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/activity'
     | '/_authenticated/dashboard'
+    | '/_authenticated/deployments'
     | '/_authenticated/documents'
     | '/_authenticated/projects'
     | '/_authenticated/requests/$id'
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deployments': {
+      id: '/_authenticated/deployments'
+      path: '/deployments'
+      fullPath: '/deployments'
+      preLoaderRoute: typeof AuthenticatedDeploymentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -228,6 +248,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDeploymentsRoute: typeof AuthenticatedDeploymentsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
@@ -238,6 +259,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDeploymentsRoute: AuthenticatedDeploymentsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
