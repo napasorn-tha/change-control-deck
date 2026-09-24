@@ -93,7 +93,7 @@ type MetricProps = {
   detail: string;
   icon: React.ComponentType<{ className?: string }>;
   tone?: "primary" | "teal" | "success" | "warning" | "danger";
-  to?: "/requests";
+  to?: "/requests" | "/deployments";
   search?: Record<string, string>;
   href?: string;
 };
@@ -186,9 +186,9 @@ function CoordinatorDashboard({ requests, deployments }: { requests: CabRequest[
       <DashboardHeader title="Deployment Dashboard" subtitle="Book approved changes and monitor every deployment window." />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Ready for booking" value={ready.length} detail="CAB passed, not yet scheduled" icon={CalendarClock} tone="warning" to="/requests" search={{ scope: "booking" }} />
-        <Metric label="Scheduled" value={scheduled.length} detail="Upcoming deployment windows" icon={CalendarClock} tone="teal" href="/deployments?status=scheduled" />
-        <Metric label="Deploying" value={active.length} detail="Changes currently underway" icon={Rocket} tone="primary" href="/deployments?status=deploying" />
-        <Metric label="Failed" value={failed.length} detail="Requires incident follow-up" icon={AlertTriangle} tone="danger" href="/deployments?status=failed" />
+        <Metric label="Scheduled" value={scheduled.length} detail="Upcoming deployment windows" icon={CalendarClock} tone="teal" to="/deployments" search={{ status: "scheduled" }} />
+        <Metric label="Deploying" value={active.length} detail="Changes currently underway" icon={Rocket} tone="primary" to="/deployments" search={{ status: "deploying" }} />
+        <Metric label="Failed" value={failed.length} detail="Requires incident follow-up" icon={AlertTriangle} tone="danger" to="/deployments" search={{ status: "failed" }} />
       </div>
       <DashboardSection title="Ready for deployment booking" subtitle="Approved requests waiting for a deployment window." actionLabel="View booking queue" search={{ scope: "booking" }}>
         <RequestTable rows={ready.slice(0, 7)} empty="No requests are waiting for booking" />
