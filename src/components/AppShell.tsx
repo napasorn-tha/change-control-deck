@@ -19,6 +19,7 @@ import {
   Rocket,
   ShieldAlert,
   Truck,
+  Users,
   X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -48,6 +49,7 @@ function navFor(role: AppRole | null): NavItem[] {
       { label: "High Risk Changes", to: "/requests", search: { scope: "risk" }, icon: ShieldAlert },
       { label: "Review History", to: "/requests", search: { scope: "history" }, icon: History },
       { label: "Projects", to: "/projects", icon: FolderKanban },
+      { label: "Users & Roles", to: "/admin/users", icon: Users },
       { label: "Activity Log", to: "/activity", icon: Activity },
     ];
   }
@@ -107,7 +109,7 @@ function navFor(role: AppRole | null): NavItem[] {
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { profile, role, user } = useAuth();
+  const { profile, role, actualRole, demoRole, setDemoRole, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -230,7 +232,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {actualRole === "admin" && (
+              <div className="flex items-center gap-2">
+                {demoRole && (
+                  <span className="hidden rounded-full border border-warning/35 bg-warning/15 px-2.5 py-1 text-xs font-medium text-warning-foreground md:inline">
+                    Demo view
+                  </span>
+                )}
+                <select
+                  aria-label="Demo role view"
+                  className="h-8 max-w-[150px] rounded-md border border-input bg-background px-2 text-xs"
+                  value={demoRole ?? "admin"}
+                  onChange={(e) => setDemoRole(e.target.value === "admin" ? null : (e.target.value as AppRole))}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="developer">View as Developer</option>
+                  <option value="cab_reviewer">View as CAB Reviewer</option>
+                  <option value="deployment_coordinator">View as Deployment Coordinator</option>
+                  <option value="executive">View as Executive</option>
+                </select>
+              </div>
+            )}
             <span className="hidden rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground sm:inline">
               {role ? ROLE_LABEL[role] : "—"}
             </span>
