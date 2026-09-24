@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 import { FolderKanban } from "lucide-react";
 
-import { useProjects } from "@/lib/data";
+import { supabase } from "@/integrations/supabase/client";
+import { useInvalidateAll, useProjects } from "@/lib/data";
 import { fmtDate } from "@/lib/cab";
 import {
   Empty,
@@ -9,6 +12,9 @@ import {
   Loading,
   PageHeader,
 } from "@/components/cab/primitives";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/projects")({
   head: () => ({
@@ -25,6 +31,40 @@ export const Route = createFileRoute("/_authenticated/projects")({
 
 function ProjectsPage() {
   const projects = useProjects();
+  const refresh = useInvalidateAll();
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [ownerLead, setOwnerLead] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function addProject(e: React.FormEvent) {
+    e.preventDefault();
+    const projectCode = code.trim().toUpperCase();
+    const projectName = name.trim();
+
+    if (!projectCode || !projectName) {
+      return toast.error("Project code and project name are required");
+    }
+
+    setSaving(true);
+    const { error } = await supabase.from("projects").insert({
+      code: projectCode,
+      name: projectName,
+      owner_lead: ownerLead.trim() || null,
+    });
+
+    if (error) {
+      setSaving(false);
+      return toast.error(error.message);
+    }
+
+    setCode("");
+    setName("");
+    setOwnerLead("");
+    await refresh();
+    setSaving(false);
+    toast.success("Project added");
+  }
 
   if (projects.isLoading) {
     return <Loading label="Loading projects…" />;
@@ -42,6 +82,50 @@ function ProjectsPage() {
         title="Projects"
         subtitle={`${rows.length} Data Warehouse project(s) registered in CAB360`}
       />
+
+      <div className="mb-5 rounded-lg border border-border bg-card p-5 shadow-card">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold">Add Project</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Register a new Data Warehouse project so it becomes available when creating a CAB request.
+          </p>
+        </div>
+
+        <form onSubmit={addProject} className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <Label>Project Code</Label>
+            <Input
+              className="mt-1"
+              placeholder="e.g. DWH-NEW"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Project Name</Label>
+            <Input
+              className="mt-1"
+              placeholder="Project name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Owner / Lead</Label>
+            <Input
+              className="mt-1"
+              placeholder="Optional"
+              value={ownerLead}
+              onChange={(e) => setOwnerLead(e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-3 flex justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add Project"}
+            </Button>
+          </div>
+        </form>
+      </div>
 
       {rows.length === 0 ? (
         <Empty
