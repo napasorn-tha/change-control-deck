@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type Scope = "all" | "mine" | "queue" | "conditions" | "risk" | "history" | "booking" | "actions";
+type Lifecycle = "submitted" | "reviewed" | "passed" | "scheduled" | "deployed" | "closed";
 const SCOPES: Scope[] = ["all", "mine", "queue", "conditions", "risk", "history", "booking", "actions"];
+const LIFECYCLE: Lifecycle[] = ["submitted", "reviewed", "passed", "scheduled", "deployed", "closed"];
 const TITLES: Record<Scope, string> = {
   all: "All CAB Requests",
   mine: "My CAB Requests",
@@ -23,8 +25,12 @@ const TITLES: Record<Scope, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/requests/")({
-  validateSearch: (s: Record<string, unknown>): { scope?: Scope | undefined } => ({
+  validateSearch: (s: Record<string, unknown>): { scope?: Scope; lifecycle?: Lifecycle; issue?: string } => ({
     scope: SCOPES.includes(s["scope"] as Scope) ? (s["scope"] as Scope) : undefined,
+    lifecycle: LIFECYCLE.includes(s["lifecycle"] as Lifecycle)
+      ? (s["lifecycle"] as Lifecycle)
+      : undefined,
+    issue: typeof s["issue"] === "string" ? s["issue"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -38,7 +44,7 @@ export const Route = createFileRoute("/_authenticated/requests/")({
 });
 
 function RequestsPage() {
-  const { scope = "all" } = Route.useSearch();
+  const { scope = "all", lifecycle, issue } = Route.useSearch();
   const { user, role } = useAuth();
   const { data, isLoading, error } = useRequests();
   const conds = useAllConditions();
@@ -56,6 +62,15 @@ function RequestsPage() {
     if (scope === "booking") r = s(["PASSED"]);
     if (scope === "actions")
       r = s(DEVELOPER_ACTION_STATUSES).filter((x) => !user || x.developer_id === user.id || role !== "developer");
+    if (lifecycle === "submitted") r = r.filter((x) => x.submitted_at);
+    if (lifecycle === "reviewed") r = r.filter((x) => x.reviewed_at);
+    if (lifecycle === "passed")
+      r = s(["PASSED", "DEPLOYMENT_BOOKED", "DEPLOYING", "DEPLOYED", "CLOSED"]);
+    if (lifecycle === "scheduled")
+      r = s(["DEPLOYMENT_BOOKED", "DEPLOYING", "DEPLOYED", "CLOSED"]);
+    if (lifecycle === "deployed") r = s(["DEPLOYED", "CLOSED"]);
+    if (lifecycle === "closed") r = s(["CLOSED"]);
+    if (issue) r = r.filter((x) => x.issue_category === issue);
     if (status) r = r.filter((x) => x.status === status);
     if (q) {
       const t = q.toLowerCase();
@@ -67,14 +82,14 @@ function RequestsPage() {
       );
     }
     return r;
-  }, [data, scope, q, status, user, role]);
+  }, [data, scope, lifecycle, issue, q, status, user, role]);
 
   const openConds = (conds.data ?? []).filter((c) => c.status !== "verified").length;
 
   return (
     <div>
       <PageHeader
-        title={TITLES[scope]}
+        title={issue ? `Issue: ${issue}` : lifecycle ? `${lifecycle.charAt(0).toUpperCase()}${lifecycle.slice(1)} Requests` : TITLES[scope]}
         subtitle={scope === "conditions" ? `${openConds} condition(s) not yet verified` : `${rows.length} request(s)`}
         actions={
           <Button asChild>

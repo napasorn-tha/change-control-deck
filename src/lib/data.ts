@@ -13,6 +13,9 @@ export type TechReview = T["technical_reviews"]["Row"];
 export type Risk = T["risk_assessments"]["Row"];
 export type ActivityRow = T["activity_log"]["Row"];
 export type Project = T["projects"]["Row"];
+export type CabKpis = Database["public"]["Views"]["v_cab_kpis"]["Row"];
+export type CabFunnel = Database["public"]["Views"]["v_funnel"]["Row"];
+export type IssueCategoryStat = Database["public"]["Views"]["v_issue_categories"]["Row"];
 
 function must<D>(res: { data: D | null; error: { message: string } | null }): D {
   if (res.error) throw new Error(res.error.message);
@@ -92,6 +95,24 @@ export function useAllDocuments() {
           .select("*, cab_requests(request_code, topic, status, developer_id)")
           .order("created_at", { ascending: false }),
       ),
+  });
+}
+
+export function useControlTower() {
+  return useQuery({
+    queryKey: ["control-tower"],
+    queryFn: async () => {
+      const [kpis, funnel, issues] = await Promise.all([
+        supabase.from("v_cab_kpis").select("*").maybeSingle(),
+        supabase.from("v_funnel").select("*").maybeSingle(),
+        supabase.from("v_issue_categories").select("*").order("total", { ascending: false }),
+      ]);
+      return {
+        kpis: must(kpis) as CabKpis | null,
+        funnel: must(funnel) as CabFunnel | null,
+        issues: must(issues) as IssueCategoryStat[],
+      };
+    },
   });
 }
 
