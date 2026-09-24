@@ -78,7 +78,7 @@ function navFor(role: AppRole | null): NavItem[] {
   }
   if (role === "executive" || role === "admin") {
     return [
-      { label: "CAB Control Tower", to: "/control-tower", icon: GaugeCircle },
+      { label: "CAB Control Tower", to: "/dashboard", icon: GaugeCircle },
       { label: "All CAB Requests", to: "/requests", icon: ListChecks },
       { label: "Deployment Calendar", to: "/deployments/calendar", icon: CalendarDays },
       { label: "Deployments", to: "/deployments", icon: Truck },
