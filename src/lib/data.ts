@@ -11,6 +11,7 @@ export type Condition = T["cab_conditions"]["Row"];
 export type Decision = T["cab_decisions"]["Row"];
 export type TechReview = T["technical_reviews"]["Row"];
 export type Risk = T["risk_assessments"]["Row"];
+export type AIAnalysis = T["ai_analyses"]["Row"];
 export type ActivityRow = T["activity_log"]["Row"];
 export type Project = T["projects"]["Row"];
 export type CabKpis = Database["public"]["Views"]["v_cab_kpis"]["Row"];
@@ -120,7 +121,7 @@ export function useRequestBundle(id: string) {
   return useQuery({
     queryKey: ["request", id],
     queryFn: async () => {
-      const [req, docs, reviews, risk, decisions, conditions, deployments, incidents] =
+      const [req, docs, reviews, risk, decisions, conditions, deployments, incidents, aiAnalysis] =
         await Promise.all([
           supabase.from("cab_requests").select("*").eq("id", id).maybeSingle(),
           supabase.from("cab_documents").select("*").eq("request_id", id),
@@ -142,6 +143,7 @@ export function useRequestBundle(id: string) {
             .select("*")
             .eq("request_id", id)
             .order("created_at", { ascending: false }),
+          supabase.from("ai_analyses").select("*").eq("request_id", id).maybeSingle(),
         ]);
       return {
         request: must(req),
@@ -152,6 +154,7 @@ export function useRequestBundle(id: string) {
         conditions: must(conditions),
         deployments: must(deployments),
         incidents: must(incidents),
+        aiAnalysis: must(aiAnalysis),
       };
     },
   });
