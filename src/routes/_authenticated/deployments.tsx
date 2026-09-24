@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Rocket } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useDeployments } from "@/lib/data";
 import { ENVIRONMENTS, fmtDate, fmtDateTime } from "@/lib/cab";
@@ -58,6 +58,12 @@ function DeploymentsPage() {
   const [status, setStatus] = useState(statusFromUrl ?? "");
   const [environment, setEnvironment] = useState("");
 
+  // Keep the local filter in sync when navigating between sidebar/dashboard
+  // links that point to this same route with a different status query.
+  useEffect(() => {
+    setStatus(statusFromUrl ?? "");
+  }, [statusFromUrl]);
+
   if (deployments.isLoading) {
     return <Loading label="Loading deployments…" />;
   }
@@ -92,6 +98,17 @@ function DeploymentsPage() {
     return "neutral";
   }
 
+  const pageTitle =
+    status === "scheduled"
+      ? "Scheduled Deployments"
+      : status === "deploying"
+        ? "Active Deployments"
+        : status === "failed"
+          ? "Failed Deployments"
+          : status === "completed"
+            ? "Deployment History"
+            : "Deployments";
+
   function environmentLabel(value: string) {
     return (
       ENVIRONMENTS.find((item) => item.value === value)?.label ?? value
@@ -101,7 +118,7 @@ function DeploymentsPage() {
   return (
     <div>
       <PageHeader
-        title="Deployments"
+        title={pageTitle}
         subtitle={`${rows.length} deployment record(s)`}
       />
 
