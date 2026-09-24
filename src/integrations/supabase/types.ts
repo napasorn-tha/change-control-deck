@@ -58,6 +58,59 @@ export type Database = {
           },
         ]
       }
+      ai_analyses: {
+        Row: {
+          analyzed_at: string | null
+          created_at: string
+          executive_summary: string | null
+          id: string
+          inconsistencies: Json
+          missing_information: Json
+          model: string | null
+          provider: string | null
+          request_id: string
+          risk_signals: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          created_at?: string
+          executive_summary?: string | null
+          id?: string
+          inconsistencies?: Json
+          missing_information?: Json
+          model?: string | null
+          provider?: string | null
+          request_id: string
+          risk_signals?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          created_at?: string
+          executive_summary?: string | null
+          id?: string
+          inconsistencies?: Json
+          missing_information?: Json
+          model?: string | null
+          provider?: string | null
+          request_id?: string
+          risk_signals?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analyses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "cab_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cab_conditions: {
         Row: {
           assigned_to: string | null
