@@ -16,6 +16,7 @@ import {
   type Deployment,
   type Incident,
   type Risk,
+  type AIAnalysis,
   type TechReview,
 } from "@/lib/data";
 import {
@@ -27,6 +28,7 @@ import {
   QA_SOURCES,
   QA_TEST_STATUSES,
   QA_APPROVAL_STATUSES,
+  isQaGatePassed,
   computeRiskScore,
   fmtDate,
   fmtDateTime,
@@ -125,6 +127,7 @@ function RequestDetail() {
         <div className="lg:col-span-2 space-y-5">
             <QAGateCard request={r} />
             <DocumentsCard request={r} documents={data.documents} />
+            <AIPreCabAnalysisCard request={r} documents={data.documents} analysis={data.aiAnalysis} />
           {(["IN_REVIEW"].includes(r.status) || data.reviews.length > 0) && (
             <TechnicalReviewCard request={r} reviews={data.reviews} />
           )}
@@ -445,6 +448,161 @@ function DocumentsCard({ request: r, documents }: { request: CabRequest; documen
           );
         })}
       </ul>
+    </Card>
+  );
+}
+
+/* ---------------- AI pre-CAB analysis ---------------- */
+
+function formatAnalysisItem(item: unknown) {
+  if (typeof item === "string") return item;
+  if (item && typeof item === "object") {
+    const value = item as Record<string, unknown>;
+    const severity =
+      typeof value.severity === "string"
+        ? `${value.severity.toUpperCase()}: `
+        : "";
+    const issue =
+      typeof value.issue === "string"
+        ? value.issue
+        : typeof value.message === "string"
+          ? value.message
+          : JSON.stringify(item);
+    const docs = Array.isArray(value.documents)
+      ? value.documents.filter((doc) => typeof doc === "string").join(", ")
+      : "";
+    return `${severity}${issue}${docs ? ` (${docs})` : ""}`;
+  }
+  return String(item);
+}
+
+function AnalysisList({
+  value,
+  emptyText,
+}: {
+  value: unknown;
+  emptyText: string;
+}) {
+  const items = Array.isArray(value) ? value : [];
+
+  if (!items.length) {
+    return <p className="mt-2 text-sm text-muted-foreground">{emptyText}</p>;
+  }
+
+  return (
+    <ul className="mt-2 space-y-1.5 text-sm">
+      {items.map((item, index) => (
+        <li key={index} className="flex gap-2">
+          <span className="text-muted-foreground">•</span>
+          <span>{formatAnalysisItem(item)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AIPreCabAnalysisCard({
+  request: r,
+  documents,
+  analysis,
+}: {
+  request: CabRequest;
+  documents: CabDocument[];
+  analysis: AIAnalysis | null;
+}) {
+  const uploaded = documents.filter((d) => d.file_path).length;
+  const documentsReady = uploaded >= DOC_TYPES.length;
+  const qaReady = isQaGatePassed(r);
+  const readyForAI = documentsReady && qaReady;
+  const status = analysis?.status ?? "NOT_ANALYZED";
+
+  const badge =
+    status === "COMPLETED"
+      ? { label: "Analysis Complete", tone: "success" as const }
+      : status === "PROCESSING"
+        ? { label: "AI Analysis Running", tone: "teal" as const }
+        : status === "FAILED"
+          ? { label: "Analysis Failed", tone: "danger" as const }
+          : readyForAI
+            ? { label: "Ready for AI Analysis", tone: "teal" as const }
+            : { label: "Waiting for CAB Readiness", tone: "warning" as const };
+
+  const completed = status === "COMPLETED";
+
+  return (
+    <Card
+      title="AI Pre-CAB Analysis"
+      description="Decision-support analysis of submitted evidence before CAB review."
+      actions={<Pill tone={badge.tone}>{badge.label}</Pill>}
+    >
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-md border border-border p-3">
+          <p className="text-xs text-muted-foreground">Required Evidences</p>
+          <p className="mt-1 text-sm font-medium">
+            {uploaded}/{DOC_TYPES.length} uploaded
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border p-3">
+          <p className="text-xs text-muted-foreground">QA Gate</p>
+          <p className="mt-1 text-sm font-medium">
+            {qaReady ? "Passed" : "Not ready"}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm font-semibold">Executive Summary</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {analysis?.executive_summary ??
+              (completed ? "No summary available." : "Not analyzed yet.")}
+          </p>
+        </div>
+
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm font-semibold">Missing Information</p>
+          <AnalysisList
+            value={analysis?.missing_information}
+            emptyText={
+              completed ? "No missing information detected." : "Not analyzed yet."
+            }
+          />
+        </div>
+
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm font-semibold">Cross-document Inconsistencies</p>
+          <AnalysisList
+            value={analysis?.inconsistencies}
+            emptyText={
+              completed ? "No inconsistencies detected." : "Not analyzed yet."
+            }
+          />
+        </div>
+
+        <div className="rounded-md border border-border p-4">
+          <p className="text-sm font-semibold">Risk Signals</p>
+          <AnalysisList
+            value={analysis?.risk_signals}
+            emptyText={completed ? "No risk signals detected." : "Not analyzed yet."}
+          />
+        </div>
+      </div>
+
+      {(analysis?.provider || analysis?.model || analysis?.analyzed_at) && (
+        <p className="mt-4 text-xs text-muted-foreground">
+          {analysis.provider ?? "AI provider"}
+          {analysis.model ? ` · ${analysis.model}` : ""}
+          {analysis.analyzed_at
+            ? ` · analyzed ${fmtDateTime(analysis.analyzed_at)}`
+            : ""}
+        </p>
+      )}
+
+      <p className="mt-3 text-xs text-muted-foreground">
+        AI analysis is decision support only. The CAB reviewer remains the final
+        decision authority.
+      </p>
     </Card>
   );
 }
