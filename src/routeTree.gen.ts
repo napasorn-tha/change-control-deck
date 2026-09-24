@@ -18,6 +18,7 @@ import { Route as AuthenticatedDeploymentsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedDeploymentsCalendarRouteImport } from './routes/_authenticated/deployments.calendar'
 import { Route as AuthenticatedRequestsIndexRouteImport } from './routes/_authenticated/requests.index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedRequestsNewRouteImport } from './routes/_authenticated/requests.new'
@@ -67,6 +68,12 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDeploymentsCalendarRoute =
+  AuthenticatedDeploymentsCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthenticatedDeploymentsRoute,
+  } as any)
 const AuthenticatedRequestsIndexRoute =
   AuthenticatedRequestsIndexRouteImport.update({
     id: '/requests/',
@@ -90,10 +97,11 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/deployments': typeof AuthenticatedDeploymentsRoute
+  '/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/requests/new': typeof AuthenticatedRequestsNewRoute
   '/requests/': typeof AuthenticatedRequestsIndexRoute
@@ -103,10 +111,11 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/deployments': typeof AuthenticatedDeploymentsRoute
+  '/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/requests/new': typeof AuthenticatedRequestsNewRoute
   '/requests': typeof AuthenticatedRequestsIndexRoute
@@ -118,10 +127,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/deployments': typeof AuthenticatedDeploymentsRoute
+  '/_authenticated/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/requests/new': typeof AuthenticatedRequestsNewRoute
   '/_authenticated/requests/': typeof AuthenticatedRequestsIndexRoute
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/incidents'
     | '/projects'
+    | '/deployments/calendar'
     | '/requests/$id'
     | '/requests/new'
     | '/requests/'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/incidents'
     | '/projects'
+    | '/deployments/calendar'
     | '/requests/$id'
     | '/requests/new'
     | '/requests'
@@ -164,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/incidents'
     | '/_authenticated/projects'
+    | '/_authenticated/deployments/calendar'
     | '/_authenticated/requests/$id'
     | '/_authenticated/requests/new'
     | '/_authenticated/requests/'
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/deployments/calendar': {
+      id: '/_authenticated/deployments/calendar'
+      path: '/calendar'
+      fullPath: '/deployments/calendar'
+      preLoaderRoute: typeof AuthenticatedDeploymentsCalendarRouteImport
+      parentRoute: typeof AuthenticatedDeploymentsRoute
+    }
     '/_authenticated/requests/': {
       id: '/_authenticated/requests/'
       path: '/requests'
@@ -264,10 +284,25 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedDeploymentsRouteChildren {
+  AuthenticatedDeploymentsCalendarRoute: typeof AuthenticatedDeploymentsCalendarRoute
+}
+
+const AuthenticatedDeploymentsRouteChildren: AuthenticatedDeploymentsRouteChildren =
+  {
+    AuthenticatedDeploymentsCalendarRoute:
+      AuthenticatedDeploymentsCalendarRoute,
+  }
+
+const AuthenticatedDeploymentsRouteWithChildren =
+  AuthenticatedDeploymentsRoute._addFileChildren(
+    AuthenticatedDeploymentsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDeploymentsRoute: typeof AuthenticatedDeploymentsRoute
+  AuthenticatedDeploymentsRoute: typeof AuthenticatedDeploymentsRouteWithChildren
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -279,7 +314,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDeploymentsRoute: AuthenticatedDeploymentsRoute,
+  AuthenticatedDeploymentsRoute: AuthenticatedDeploymentsRouteWithChildren,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
