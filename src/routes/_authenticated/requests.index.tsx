@@ -25,13 +25,15 @@ const TITLES: Record<Scope, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/requests/")({
-  validateSearch: (s: Record<string, unknown>): { scope?: Scope; lifecycle?: Lifecycle; issue?: string } => ({
-    scope: SCOPES.includes(s["scope"] as Scope) ? (s["scope"] as Scope) : undefined,
-    lifecycle: LIFECYCLE.includes(s["lifecycle"] as Lifecycle)
-      ? (s["lifecycle"] as Lifecycle)
-      : undefined,
-    issue: typeof s["issue"] === "string" ? s["issue"] : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { scope?: Scope; lifecycle?: Lifecycle; issue?: string } => {
+    const search: { scope?: Scope; lifecycle?: Lifecycle; issue?: string } = {};
+    if (SCOPES.includes(s["scope"] as Scope)) search.scope = s["scope"] as Scope;
+    if (LIFECYCLE.includes(s["lifecycle"] as Lifecycle)) {
+      search.lifecycle = s["lifecycle"] as Lifecycle;
+    }
+    if (typeof s["issue"] === "string") search.issue = s["issue"];
+    return search;
+  },
   head: () => ({
     meta: [
       { title: "CAB Requests — CAB360" },
