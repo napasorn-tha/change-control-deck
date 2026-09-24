@@ -292,8 +292,9 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   } else if (st === "CLOSED") {
     text = "This change is closed and preserved for audit history.";
     const canDuplicate =
-      actor.role === "admin" ||
-      (actor.id != null && actor.id === r.developer_id);
+      can(actor.role, "developer") &&
+      (actor.role === "admin" ||
+        (actor.id != null && actor.id === r.developer_id));
 
     if (canDuplicate) {
       buttons = (
