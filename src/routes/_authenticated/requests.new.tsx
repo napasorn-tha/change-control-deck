@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,6 +97,13 @@ function NewRequest() {
                 <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Project not listed?{" "}
+              <Link to="/projects" className="text-primary hover:underline">
+                Add it in Projects
+              </Link>
+              .
+            </p>
           </div>
           <div className="sm:col-span-2">
             <Label>Topic / change title</Label>
