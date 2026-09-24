@@ -4,8 +4,10 @@ import { toast } from "sonner";
 import { FolderKanban } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useInvalidateAll, useProjects } from "@/lib/data";
 import { fmtDate } from "@/lib/cab";
+import { can } from "@/lib/workflow";
 import {
   Empty,
   ErrorState,
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/projects")({
 });
 
 function ProjectsPage() {
+  const { role } = useAuth();
   const projects = useProjects();
   const refresh = useInvalidateAll();
   const [code, setCode] = useState("");
@@ -83,7 +86,8 @@ function ProjectsPage() {
         subtitle={`${rows.length} Data Warehouse project(s) registered in CAB360`}
       />
 
-      <div className="mb-5 rounded-lg border border-border bg-card p-5 shadow-card">
+      {can(role, "developer") && (
+        <div className="mb-5 rounded-lg border border-border bg-card p-5 shadow-card">
         <div className="mb-4">
           <h2 className="text-sm font-semibold">Add Project</h2>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -125,7 +129,8 @@ function ProjectsPage() {
             </Button>
           </div>
         </form>
-      </div>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <Empty
