@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   CalendarDays,
   ClipboardList,
   FileStack,
@@ -113,6 +114,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const location = useRouterState({ select: (s) => s.location });
   const items = navFor(role);
 
+  function handleBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    void navigate({ to: "/dashboard" });
+  }
+
   async function handleSignOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
@@ -204,6 +213,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="h-4 w-4" />
             </button>
+            {location.pathname !== "/dashboard" && (
+              <button
+                className="rounded-md p-2 hover:bg-secondary"
+                onClick={handleBack}
+                aria-label="Go back"
+                title="Back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">CAB360</p>
               <p className="hidden truncate text-xs text-muted-foreground sm:block">
