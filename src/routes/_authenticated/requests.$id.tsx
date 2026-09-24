@@ -290,11 +290,11 @@ function QAGateCard({ request: r }: { request: CabRequest }) {
 
   return (
     <Card
-      title="QA Gate"
-      description="QA must be completed before this request can enter CAB review."
+      title="CAB Readiness"
+      description="CAB readiness requires all 5 evidences plus a completed QA gate."
       actions={
         <Pill tone={passed ? "success" : "warning"}>
-          {passed ? "QA Gate Passed" : "CAB Blocked"}
+          {passed ? "QA Ready" : "QA Blocking CAB"}
         </Pill>
       }
     >
@@ -407,7 +407,7 @@ function DocumentsCard({ request: r, documents }: { request: CabRequest; documen
   }
 
   return (
-    <Card title="Required documents" description={`Readiness ${pct}% · ${uploaded}/${DOC_TYPES.length} uploaded`}>
+    <Card title="Required documents" description={`Document completeness ${pct}% · ${uploaded}/${DOC_TYPES.length} uploaded`}>
       <div className="mb-4"><ProgressBar value={pct} tone={pct >= 100 ? "success" : "warning"} /></div>
       <ul className="divide-y divide-border">
         {DOC_TYPES.map((dt) => {
