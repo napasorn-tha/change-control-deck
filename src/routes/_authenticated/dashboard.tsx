@@ -95,9 +95,10 @@ type MetricProps = {
   tone?: "primary" | "teal" | "success" | "warning" | "danger";
   to?: "/requests";
   search?: Record<string, string>;
+  href?: string;
 };
 
-function Metric({ label, value, detail, icon: Icon, tone = "primary", to, search }: MetricProps) {
+function Metric({ label, value, detail, icon: Icon, tone = "primary", to, search, href }: MetricProps) {
   const tones = {
     primary: "bg-primary/10 text-primary",
     teal: "bg-teal/10 text-teal",
@@ -119,7 +120,9 @@ function Metric({ label, value, detail, icon: Icon, tone = "primary", to, search
       <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
-  return to ? <Link to={to} search={search ?? {}} className="block h-full">{content}</Link> : content;
+  if (to) return <Link to={to} search={search ?? {}} className="block h-full">{content}</Link>;
+  if (href) return <a href={href} className="block h-full">{content}</a>;
+  return content;
 }
 
 function DashboardHeader({ title, subtitle }: { title: string; subtitle: string }) {
@@ -183,9 +186,9 @@ function CoordinatorDashboard({ requests, deployments }: { requests: CabRequest[
       <DashboardHeader title="Deployment Dashboard" subtitle="Book approved changes and monitor every deployment window." />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Ready for booking" value={ready.length} detail="CAB passed, not yet scheduled" icon={CalendarClock} tone="warning" to="/requests" search={{ scope: "booking" }} />
-        <Metric label="Scheduled" value={scheduled.length} detail="Upcoming deployment windows" icon={CalendarClock} tone="teal" />
-        <Metric label="Deploying" value={active.length} detail="Changes currently underway" icon={Rocket} tone="primary" />
-        <Metric label="Failed" value={failed.length} detail="Requires incident follow-up" icon={AlertTriangle} tone="danger" />
+        <Metric label="Scheduled" value={scheduled.length} detail="Upcoming deployment windows" icon={CalendarClock} tone="teal" href="/deployments?status=scheduled" />
+        <Metric label="Deploying" value={active.length} detail="Changes currently underway" icon={Rocket} tone="primary" href="/deployments?status=deploying" />
+        <Metric label="Failed" value={failed.length} detail="Requires incident follow-up" icon={AlertTriangle} tone="danger" href="/deployments?status=failed" />
       </div>
       <DashboardSection title="Ready for deployment booking" subtitle="Approved requests waiting for a deployment window." actionLabel="View booking queue" search={{ scope: "booking" }}>
         <RequestTable rows={ready.slice(0, 7)} empty="No requests are waiting for booking" />
