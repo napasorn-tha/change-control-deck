@@ -7,14 +7,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ROLE_LABEL, type AppRole } from "@/lib/cab";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { mode?: "signup" | "signin" | undefined } => ({
@@ -40,7 +32,6 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<AppRole>("developer");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -57,7 +48,7 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
-            data: { full_name: fullName, role },
+            data: { full_name: fullName },
           },
         });
         if (error) throw error;
@@ -124,7 +115,7 @@ function AuthPage() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {isSignup
-              ? "Choose the role that matches your responsibility."
+              ? "Create your account. An Admin will assign your CAB360 role."
               : "Use your work email address."}
           </p>
 
@@ -164,21 +155,9 @@ function AuthPage() {
               />
             </div>
             {isSignup && (
-              <div className="space-y-1.5">
-                <Label>Role</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(ROLE_LABEL) as AppRole[]).map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {ROLE_LABEL[r]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="rounded-md border border-border bg-surface px-3 py-2 text-xs text-muted-foreground">
+                New accounts start as Developer. An Admin can assign a different role after the first sign-in.
+              </p>
             )}
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
