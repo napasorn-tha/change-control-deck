@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth, useActorName } from "@/hooks/useAuth";
 import { useProjects, useRequests } from "@/lib/data";
 import { CHANGE_TYPES, DOC_TYPES, logActivity, nextRequestCode } from "@/lib/cab";
-import { Card, PageHeader } from "@/components/cab/primitives";
+import { can } from "@/lib/workflow";
+import { Card, Empty, PageHeader } from "@/components/cab/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/requests/new")({
 
 function NewRequest() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const actor = useActorName();
   const projects = useProjects();
   const requests = useRequests();
@@ -41,6 +42,15 @@ function NewRequest() {
     description: "",
   });
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+
+  if (!can(role, "developer")) {
+    return (
+      <Empty
+        title="Read-only role"
+        body="Only a Developer or Admin can create a CAB request."
+      />
+    );
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
