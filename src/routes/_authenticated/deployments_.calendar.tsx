@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/deployments/calendar",
+  "/_authenticated/deployments_/calendar",
 )({
   head: () => ({
     meta: [

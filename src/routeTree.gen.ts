@@ -18,7 +18,7 @@ import { Route as AuthenticatedDeploymentsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
-import { Route as AuthenticatedDeploymentsCalendarRouteImport } from './routes/_authenticated/deployments.calendar'
+import { Route as AuthenticatedDeploymentsCalendarRouteImport } from './routes/_authenticated/deployments_.calendar'
 import { Route as AuthenticatedRequestsIndexRouteImport } from './routes/_authenticated/requests.index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedRequestsNewRouteImport } from './routes/_authenticated/requests.new'
@@ -70,9 +70,9 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
 } as any)
 const AuthenticatedDeploymentsCalendarRoute =
   AuthenticatedDeploymentsCalendarRouteImport.update({
-    id: '/calendar',
-    path: '/calendar',
-    getParentRoute: () => AuthenticatedDeploymentsRoute,
+    id: '/deployments_/calendar',
+    path: '/deployments/calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRequestsIndexRoute =
   AuthenticatedRequestsIndexRouteImport.update({
@@ -97,7 +97,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
+  '/deployments': typeof AuthenticatedDeploymentsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -111,7 +111,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/activity': typeof AuthenticatedActivityRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
+  '/deployments': typeof AuthenticatedDeploymentsRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -127,11 +127,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/deployments': typeof AuthenticatedDeploymentsRouteWithChildren
+  '/_authenticated/deployments': typeof AuthenticatedDeploymentsRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
-  '/_authenticated/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
+  '/_authenticated/deployments_/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/requests/new': typeof AuthenticatedRequestsNewRoute
   '/_authenticated/requests/': typeof AuthenticatedRequestsIndexRoute
@@ -176,7 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/incidents'
     | '/_authenticated/projects'
-    | '/_authenticated/deployments/calendar'
+    | '/_authenticated/deployments_/calendar'
     | '/_authenticated/requests/$id'
     | '/_authenticated/requests/new'
     | '/_authenticated/requests/'
@@ -253,12 +253,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/deployments/calendar': {
-      id: '/_authenticated/deployments/calendar'
-      path: '/calendar'
+    '/_authenticated/deployments_/calendar': {
+      id: '/_authenticated/deployments_/calendar'
+      path: '/deployments/calendar'
       fullPath: '/deployments/calendar'
       preLoaderRoute: typeof AuthenticatedDeploymentsCalendarRouteImport
-      parentRoute: typeof AuthenticatedDeploymentsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/requests/': {
       id: '/_authenticated/requests/'
@@ -284,28 +284,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedDeploymentsRouteChildren {
-  AuthenticatedDeploymentsCalendarRoute: typeof AuthenticatedDeploymentsCalendarRoute
-}
-
-const AuthenticatedDeploymentsRouteChildren: AuthenticatedDeploymentsRouteChildren =
-  {
-    AuthenticatedDeploymentsCalendarRoute:
-      AuthenticatedDeploymentsCalendarRoute,
-  }
-
-const AuthenticatedDeploymentsRouteWithChildren =
-  AuthenticatedDeploymentsRoute._addFileChildren(
-    AuthenticatedDeploymentsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDeploymentsRoute: typeof AuthenticatedDeploymentsRouteWithChildren
+  AuthenticatedDeploymentsRoute: typeof AuthenticatedDeploymentsRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedDeploymentsCalendarRoute: typeof AuthenticatedDeploymentsCalendarRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
   AuthenticatedRequestsNewRoute: typeof AuthenticatedRequestsNewRoute
   AuthenticatedRequestsIndexRoute: typeof AuthenticatedRequestsIndexRoute
@@ -314,10 +300,11 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDeploymentsRoute: AuthenticatedDeploymentsRouteWithChildren,
+  AuthenticatedDeploymentsRoute: AuthenticatedDeploymentsRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedDeploymentsCalendarRoute: AuthenticatedDeploymentsCalendarRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
   AuthenticatedRequestsNewRoute: AuthenticatedRequestsNewRoute,
   AuthenticatedRequestsIndexRoute: AuthenticatedRequestsIndexRoute,
