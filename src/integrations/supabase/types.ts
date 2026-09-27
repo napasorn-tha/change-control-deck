@@ -421,6 +421,352 @@ export type Database = {
           },
         ]
       }
+      hist_cab_rounds: {
+        Row: {
+          cab_date: string | null
+          confidence: string
+          cr_number: string
+          created_at: string
+          dataset_id: string
+          date_source: string | null
+          decision: string
+          id: string
+          is_special_cab: boolean
+          reject_type: string | null
+          round_no: number
+          session: string | null
+          source_text: string | null
+        }
+        Insert: {
+          cab_date?: string | null
+          confidence?: string
+          cr_number: string
+          created_at?: string
+          dataset_id: string
+          date_source?: string | null
+          decision: string
+          id?: string
+          is_special_cab?: boolean
+          reject_type?: string | null
+          round_no: number
+          session?: string | null
+          source_text?: string | null
+        }
+        Update: {
+          cab_date?: string | null
+          confidence?: string
+          cr_number?: string
+          created_at?: string
+          dataset_id?: string
+          date_source?: string | null
+          decision?: string
+          id?: string
+          is_special_cab?: boolean
+          reject_type?: string | null
+          round_no?: number
+          session?: string | null
+          source_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hist_cab_rounds_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "hist_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hist_datasets: {
+        Row: {
+          computed_counts: Json
+          created_at: string
+          expected_counts: Json
+          file_sha256: string
+          id: string
+          imported_by: string | null
+          published: boolean
+          snapshot_date: string
+          source_file: string
+          taxonomy_version: string
+          updated_at: string
+          validation_errors: Json
+          validation_status: string
+        }
+        Insert: {
+          computed_counts?: Json
+          created_at?: string
+          expected_counts?: Json
+          file_sha256: string
+          id?: string
+          imported_by?: string | null
+          published?: boolean
+          snapshot_date: string
+          source_file: string
+          taxonomy_version: string
+          updated_at?: string
+          validation_errors?: Json
+          validation_status?: string
+        }
+        Update: {
+          computed_counts?: Json
+          created_at?: string
+          expected_counts?: Json
+          file_sha256?: string
+          id?: string
+          imported_by?: string | null
+          published?: boolean
+          snapshot_date?: string
+          source_file?: string
+          taxonomy_version?: string
+          updated_at?: string
+          validation_errors?: Json
+          validation_status?: string
+        }
+        Relationships: []
+      }
+      hist_deployment_outcomes: {
+        Row: {
+          attempt_no: number
+          cr_number: string
+          created_at: string
+          dataset_id: string
+          deploy_date: string | null
+          id: string
+          outcome: string
+          source_text: string | null
+        }
+        Insert: {
+          attempt_no?: number
+          cr_number: string
+          created_at?: string
+          dataset_id: string
+          deploy_date?: string | null
+          id?: string
+          outcome: string
+          source_text?: string | null
+        }
+        Update: {
+          attempt_no?: number
+          cr_number?: string
+          created_at?: string
+          dataset_id?: string
+          deploy_date?: string | null
+          id?: string
+          outcome?: string
+          source_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hist_deployment_outcomes_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "hist_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hist_dq_flags: {
+        Row: {
+          confirmation_status: string
+          cr_number: string
+          created_at: string
+          dataset_id: string
+          detail: string | null
+          flag_code: string
+          id: string
+        }
+        Insert: {
+          confirmation_status?: string
+          cr_number: string
+          created_at?: string
+          dataset_id: string
+          detail?: string | null
+          flag_code: string
+          id?: string
+        }
+        Update: {
+          confirmation_status?: string
+          cr_number?: string
+          created_at?: string
+          dataset_id?: string
+          detail?: string | null
+          flag_code?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hist_dq_flags_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "hist_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hist_issues: {
+        Row: {
+          categorized_summary: string | null
+          confidence: string
+          cr_number: string
+          created_at: string
+          dataset_id: string
+          date_source: string | null
+          deployment_outcome_id: string | null
+          id: string
+          is_rejected: boolean
+          is_special_cab: boolean
+          original_remark: string
+          primary_category: string
+          reject_type: string | null
+          secondary_category: string | null
+          source_date: string | null
+          source_file: string
+          source_row: number
+          taxonomy_version: string
+        }
+        Insert: {
+          categorized_summary?: string | null
+          confidence: string
+          cr_number: string
+          created_at?: string
+          dataset_id: string
+          date_source?: string | null
+          deployment_outcome_id?: string | null
+          id?: string
+          is_rejected?: boolean
+          is_special_cab?: boolean
+          original_remark: string
+          primary_category: string
+          reject_type?: string | null
+          secondary_category?: string | null
+          source_date?: string | null
+          source_file: string
+          source_row: number
+          taxonomy_version: string
+        }
+        Update: {
+          categorized_summary?: string | null
+          confidence?: string
+          cr_number?: string
+          created_at?: string
+          dataset_id?: string
+          date_source?: string | null
+          deployment_outcome_id?: string | null
+          id?: string
+          is_rejected?: boolean
+          is_special_cab?: boolean
+          original_remark?: string
+          primary_category?: string
+          reject_type?: string | null
+          secondary_category?: string | null
+          source_date?: string | null
+          source_file?: string
+          source_row?: number
+          taxonomy_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hist_issues_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "hist_datasets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hist_issues_deploy_fk"
+            columns: ["deployment_outcome_id"]
+            isOneToOne: false
+            referencedRelation: "hist_deployment_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hist_issues_primary_category_fkey"
+            columns: ["primary_category"]
+            isOneToOne: false
+            referencedRelation: "hist_taxonomy"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "hist_issues_secondary_category_fkey"
+            columns: ["secondary_category"]
+            isOneToOne: false
+            referencedRelation: "hist_taxonomy"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      hist_overrides: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string
+          dataset_id: string
+          field: string
+          id: string
+          new_value: string | null
+          original_value: string | null
+          reason: string
+          target_id: string
+          target_table: string
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by: string
+          dataset_id: string
+          field: string
+          id?: string
+          new_value?: string | null
+          original_value?: string | null
+          reason: string
+          target_id: string
+          target_table: string
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string
+          dataset_id?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          original_value?: string | null
+          reason?: string
+          target_id?: string
+          target_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hist_overrides_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "hist_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hist_taxonomy: {
+        Row: {
+          code: string
+          created_at: string
+          group_code: string
+          name: string
+          taxonomy_version: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          group_code: string
+          name: string
+          taxonomy_version?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          group_code?: string
+          name?: string
+          taxonomy_version?: string
+        }
+        Relationships: []
+      }
       incidents: {
         Row: {
           corrective_action: string | null
@@ -719,6 +1065,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_history: { Args: { _uid: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
