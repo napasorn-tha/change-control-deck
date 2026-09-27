@@ -52,11 +52,17 @@ function NewRequest() {
     );
   }
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     const project = projects.data?.find((p) => p.id === f.project_id);
-    if (!project) return toast.error("Choose a project");
-    if (!f.topic.trim()) return toast.error("Topic is required");
+    if (!project) {
+      toast.error("Choose a project");
+      return;
+    }
+    if (!f.topic.trim()) {
+      toast.error("Topic is required");
+      return;
+    }
     setBusy(true);
     try {
       const code = nextRequestCode((requests.data ?? []).map((r) => r.request_code));
@@ -84,7 +90,7 @@ function NewRequest() {
       await supabase
         .from("cab_documents")
         .insert(DOC_TYPES.map((d) => ({ request_id: data.id, doc_type: d.value, review_status: "missing" })));
-      await logActivity({ request_id: data.id, actor_id: user?.id, actor_name: actor, action: "Request created", to_status: "DRAFT" });
+      await logActivity({ request_id: data.id, actor_id: user?.id ?? null, actor_name: actor, action: "Request created", to_status: "DRAFT" });
       toast.success(`${code} created — upload the required documents next`);
       void navigate({ to: "/requests/$id", params: { id: data.id } });
     } catch (err) {
