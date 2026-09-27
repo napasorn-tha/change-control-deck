@@ -103,7 +103,7 @@ describe("historical analytics", () => {
   });
 
   it("unknown category fails validation", () => {
-    const b = computeAnalytics({ ...fx, issues: [...fx.issues, { ...fx.issues[0], source_row: 99, primary_category: "Z" }] });
+    const b = computeAnalytics({ ...fx, issues: [...fx.issues, { ...fx.issues[0]!, source_row: 99, primary_category: "Z" }] });
     expect(validateSnapshot(b).length).toBeGreaterThan(0);
   });
   it("explicit wording detection", () => {
