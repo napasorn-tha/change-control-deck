@@ -30,7 +30,7 @@ const ROLES: AppRole[] = [
   "admin",
 ];
 
-export const Route = createFileRoute("/_authenticated/admin/users")({
+export const Route = createFileRoute("/_authenticated/admin_/users")({
   head: () => ({
     meta: [
       { title: "Users & Roles — CAB360" },

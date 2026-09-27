@@ -274,9 +274,9 @@ export type Database = {
           project_code: string
           project_id: string | null
           project_name: string
+          qa_approval_status: string
           qa_source: string | null
           qa_test_status: string
-          qa_approval_status: string
           readiness_score: number
           request_code: string
           reviewed_at: string | null
@@ -304,9 +304,9 @@ export type Database = {
           project_code: string
           project_id?: string | null
           project_name: string
+          qa_approval_status?: string
           qa_source?: string | null
           qa_test_status?: string
-          qa_approval_status?: string
           readiness_score?: number
           request_code: string
           reviewed_at?: string | null
@@ -334,9 +334,9 @@ export type Database = {
           project_code?: string
           project_id?: string | null
           project_name?: string
+          qa_approval_status?: string
           qa_source?: string | null
           qa_test_status?: string
-          qa_approval_status?: string
           readiness_score?: number
           request_code?: string
           reviewed_at?: string | null

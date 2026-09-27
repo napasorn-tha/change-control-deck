@@ -18,6 +18,7 @@ import { Route as AuthenticatedDeploymentsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedIncidentsRouteImport } from './routes/_authenticated/incidents'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin_.users'
 import { Route as AuthenticatedDeploymentsCalendarRouteImport } from './routes/_authenticated/deployments_.calendar'
 import { Route as AuthenticatedRequestsIndexRouteImport } from './routes/_authenticated/requests.index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
@@ -68,6 +69,11 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin_/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDeploymentsCalendarRoute =
   AuthenticatedDeploymentsCalendarRouteImport.update({
     id: '/deployments_/calendar',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/requests/new': typeof AuthenticatedRequestsNewRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/incidents': typeof AuthenticatedIncidentsRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/deployments/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/requests/new': typeof AuthenticatedRequestsNewRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/incidents': typeof AuthenticatedIncidentsRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/admin_/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/deployments_/calendar': typeof AuthenticatedDeploymentsCalendarRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/requests/new': typeof AuthenticatedRequestsNewRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/incidents'
     | '/projects'
+    | '/admin/users'
     | '/deployments/calendar'
     | '/requests/$id'
     | '/requests/new'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/incidents'
     | '/projects'
+    | '/admin/users'
     | '/deployments/calendar'
     | '/requests/$id'
     | '/requests/new'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/incidents'
     | '/_authenticated/projects'
+    | '/_authenticated/admin_/users'
     | '/_authenticated/deployments_/calendar'
     | '/_authenticated/requests/$id'
     | '/_authenticated/requests/new'
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin_/users': {
+      id: '/_authenticated/admin_/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deployments_/calendar': {
       id: '/_authenticated/deployments_/calendar'
       path: '/deployments/calendar'
@@ -291,6 +310,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedIncidentsRoute: typeof AuthenticatedIncidentsRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedDeploymentsCalendarRoute: typeof AuthenticatedDeploymentsCalendarRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
   AuthenticatedRequestsNewRoute: typeof AuthenticatedRequestsNewRoute
@@ -304,6 +324,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedIncidentsRoute: AuthenticatedIncidentsRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedDeploymentsCalendarRoute: AuthenticatedDeploymentsCalendarRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
   AuthenticatedRequestsNewRoute: AuthenticatedRequestsNewRoute,
