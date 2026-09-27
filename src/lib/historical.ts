@@ -90,8 +90,8 @@ export function classifyRejectWording(remark: string): RejectType {
 export function rejectEvents(rounds: HistRound[]) {
   const map = new Map<string, { cr: string; date: string | null; type: RejectType }>();
   for (const r of rounds) {
-    if (r.decision !== "REJECTED") continue;
-    const key = `${r.cr_number}|${r.cab_date ?? ""}`;
+    if (r.decision !== "REJECTED" || !r.cab_date) continue;
+    const key = `${r.cr_number}|${r.cab_date}`;
     const prev = map.get(key);
     // Explicit wins if any round on that (CR,date) is explicit.
     const type: RejectType = prev?.type === "Explicit" || r.reject_type === "Explicit" ? "Explicit" : "Implied";
@@ -149,7 +149,10 @@ export function computeAnalytics(s: Snapshot) {
   const dq = issues.filter((i) => isDataQuality(i.primary_category));
   const dqDated = dq.filter((i) => i.source_date);
   const dqUndated = dq.length - dqDated.length;
-  const months = dqDated.map((i) => i.source_date!.slice(0, 7)).sort();
+  // Use the entire historical period (not merely months containing a DQ issue), including zero-DQ months.
+  const months = [...issues.map((i) => i.source_date).filter((v): v is string => !!v),
+    ...s.rounds.map((r) => r.cab_date).filter((v): v is string => !!v)]
+    .map((d) => d.slice(0, 7)).sort();
   const monthly: MonthlyRow[] = months.length
     ? monthRange(months[0], months[months.length - 1]).map((m) => {
         const row: MonthlyRow = { month: m, label: thaiMonthLabel(m), A: 0, B: 0, C: 0, E: 0, DFG: 0 };
@@ -183,6 +186,7 @@ export function computeAnalytics(s: Snapshot) {
     monthly,
     rejected: {
       issueRows: rejectedIssues.length,
+      undatedRounds: s.rounds.filter((r) => r.decision === "REJECTED" && !r.cab_date).length,
       events: events.length,
       crs: new Set(events.map((e) => e.cr)).size,
       explicit: events.filter((e) => e.type === "Explicit").length,
@@ -212,6 +216,7 @@ export function validateSnapshot(a: Analytics, expected: Expected = {}): string[
   if (grpSum !== a.totalIssues) errs.push(`Group sum ${grpSum} ≠ total issues ${a.totalIssues}`);
   const monthlyDq = a.monthly.reduce((x, r) => x + r.A + r.B + r.C + r.E + r.DFG, 0);
   if (monthlyDq + a.dq.undated !== a.dq.issues) errs.push(`Monthly DQ ${monthlyDq} + undated ${a.dq.undated} ≠ DQ total ${a.dq.issues}`);
+  if (a.rejected.undatedRounds) errs.push(`${a.rejected.undatedRounds} rejected CAB rounds lack verified dates; event count cannot be published`);
   if (a.rejected.explicit + a.rejected.implied !== a.rejected.events) errs.push("Explicit + Implied ≠ reject events");
   if (a.rejected.crs > a.rejected.events) errs.push("Rejected CRs exceed reject events");
   if (a.multiRound.threePlus > a.multiRound.count) errs.push("3-round CRs exceed multi-round CRs");
