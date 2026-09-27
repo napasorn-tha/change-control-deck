@@ -28,3 +28,5 @@ jobs:
         run: npx vitest run src/lib/historical.test.ts
       - name: Production build
         run: npm run build
+      - name: TypeScript diagnostics
+        run: npx tsc --noEmit
