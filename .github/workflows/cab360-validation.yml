@@ -1,0 +1,30 @@
+name: CAB360 validation
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "docs/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/cab360-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Synthetic historical analytics tests
+        run: npx vitest run src/lib/historical.test.ts
+      - name: Production build
+        run: npm run build
