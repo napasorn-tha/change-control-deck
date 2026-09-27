@@ -340,7 +340,7 @@ function QAGateCard({ request: r }: { request: CabRequest }) {
       approvalStatus === "NOT_REQUIRED");
 
   async function save() {
-    if (!source) return toast.error("Select a QA source");
+    if (!source) { toast.error("Select a QA source"); return; }
 
     const { error } = await supabase
       .from("cab_requests")
@@ -351,7 +351,7 @@ function QAGateCard({ request: r }: { request: CabRequest }) {
       })
       .eq("id", r.id);
 
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
 
     await logActivity({
       request_id: r.id,
@@ -478,7 +478,7 @@ function DocumentsCard({ request: r, documents }: { request: CabRequest; documen
 
   async function review(doc: CabDocument, status: "approved" | "rejected") {
     const { error } = await supabase.from("cab_documents").update({ review_status: status }).eq("id", doc.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: `Document ${status}: ${DOC_TYPES.find((d) => d.value === doc.doc_type)?.label}` });
     await refresh();
   }
@@ -533,17 +533,17 @@ function formatAnalysisItem(item: unknown) {
   if (item && typeof item === "object") {
     const value = item as Record<string, unknown>;
     const severity =
-      typeof value.severity === "string"
-        ? `${value.severity.toUpperCase()}: `
+      typeof value["severity"] === "string"
+        ? `${value["severity"].toUpperCase()}: `
         : "";
     const issue =
-      typeof value.issue === "string"
-        ? value.issue
-        : typeof value.message === "string"
-          ? value.message
+      typeof value["issue"] === "string"
+        ? value["issue"]
+        : typeof value["message"] === "string"
+          ? value["message"]
           : JSON.stringify(item);
-    const docs = Array.isArray(value.documents)
-      ? value.documents.filter((doc) => typeof doc === "string").join(", ")
+    const docs = Array.isArray(value["documents"])
+      ? value["documents"].filter((doc) => typeof doc === "string").join(", ")
       : "";
     return `${severity}${issue}${docs ? ` (${docs})` : ""}`;
   }
@@ -708,7 +708,7 @@ function SectionForm({ request: r, section, existing }: { request: CabRequest; s
       { request_id: r.id, section, checklist: checks, findings, issue_category: cat, reviewer_id: actor.id, reviewer_name: actor.name, reviewed_at: new Date().toISOString() },
       { onConflict: "request_id,section" },
     );
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await supabase.from("cab_requests").update({ issue_category: cat }).eq("id", r.id);
     await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: `${def.label} saved`, comment: findings || null });
     toast.success(`${def.label} saved`);
@@ -762,7 +762,7 @@ function RiskCard({ request: r, risk }: { request: CabRequest; risk: Risk | null
       { request_id: r.id, complexity: c, dependency: d, previous_issues: p, score, level, notes, assessed_by: actor.id, assessed_at: new Date().toISOString() },
       { onConflict: "request_id" },
     );
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await supabase.from("cab_requests").update({ risk_score: score, risk_level: level }).eq("id", r.id);
     await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: `Risk assessed: ${level} (${score})` });
     toast.success("Risk assessment saved");
@@ -801,10 +801,10 @@ function DecisionCard({ request: r, risk }: { request: CabRequest; risk: Risk | 
   if (!can(actor.role, "cab_reviewer")) return null;
 
   async function submit() {
-    if (!risk) return toast.error("Save the risk assessment first");
-    if (!comment.trim()) return toast.error("A decision comment is required");
+    if (!risk) { toast.error("Save the risk assessment first"); return; }
+    if (!comment.trim()) { toast.error("A decision comment is required"); return; }
     const list = conds.map((c) => c.trim()).filter(Boolean);
-    if (decision === "passed_with_conditions" && !list.length) return toast.error("Add at least one condition");
+    if (decision === "passed_with_conditions" && !list.length) { toast.error("Add at least one condition"); return; }
     setBusy(true);
     try {
       const { error } = await supabase.from("cab_decisions").insert({ request_id: r.id, decision, comment, decided_by: actor.id, decided_by_name: actor.name });
@@ -884,7 +884,7 @@ function ConditionRow({ request: r, c }: { request: CabRequest; c: Condition }) 
   const verify = r.status === "CONDITIONS_VERIFICATION" && can(actor.role, "cab_reviewer") && c.status === "ready_for_verification";
 
   async function respond() {
-    if (!resp.trim()) return toast.error("Response is required");
+    if (!resp.trim()) { toast.error("Response is required"); return; }
     try {
       let upd: Partial<Condition> = { developer_response: resp, status: "ready_for_verification" };
       if (file) {
@@ -904,7 +904,7 @@ function ConditionRow({ request: r, c }: { request: CabRequest; c: Condition }) 
     const { error } = await supabase.from("cab_conditions").update({
       status: ok ? "verified" : "rejected", verification_result: verNote || null, verified_by: actor.id, verified_by_name: actor.name, verified_at: new Date().toISOString(),
     }).eq("id", c.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: ok ? "Condition verified" : "Condition rejected", comment: verNote || c.condition_text });
     // Evaluate outcome once no conditions are awaiting verification.
     const { data: all } = await supabase.from("cab_conditions").select("*").eq("request_id", r.id);
@@ -970,18 +970,18 @@ function DeploymentCard({ request: r, deployments }: { request: CabRequest; depl
   const current = deployments[0];
 
   async function book() {
-    if (r.status !== "PASSED") return toast.error("Only Passed requests can be booked");
-    if (!f.deploy_date) return toast.error("Choose a date");
+    if (r.status !== "PASSED") { toast.error("Only Passed requests can be booked"); return; }
+    if (!f.deploy_date) { toast.error("Choose a date"); return; }
     const ws = new Date(`${f.deploy_date}T${f.start}`);
     const we = new Date(`${f.deploy_date}T${f.end}`);
-    if (we <= ws) return toast.error("Window end must be after start");
+    if (we <= ws) { toast.error("Window end must be after start"); return; }
     const { data: clash } = await supabase.from("deployments").select("id").eq("environment", f.environment).in("status", ["scheduled", "deploying"]).lt("window_start", we.toISOString()).gt("window_end", ws.toISOString());
-    if (clash && clash.length) return toast.error("This window overlaps another deployment in the same environment");
+    if (clash && clash.length) { toast.error("This window overlaps another deployment in the same environment"); return; }
     const { error } = await supabase.from("deployments").insert({
       request_id: r.id, environment: f.environment, deploy_date: f.deploy_date, window_start: ws.toISOString(), window_end: we.toISOString(),
       coordinator_id: actor.id, coordinator_name: actor.name, notes: f.notes || null, attempt: deployments.length + 1,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await transition(r.id, "PASSED", "DEPLOYMENT_BOOKED", actor, `Deployment booked (${f.environment}) ${f.deploy_date}`);
     toast.success("Deployment booked");
     await refresh();
@@ -994,7 +994,7 @@ function DeploymentCard({ request: r, deployments }: { request: CabRequest; depl
     if (status === "deploying") upd.started_at = now;
     if (status === "completed" || status === "failed") upd.completed_at = now;
     const { error } = await supabase.from("deployments").update(upd).eq("id", current.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     try {
       if (status === "deploying") await transition(r.id, "DEPLOYMENT_BOOKED", "DEPLOYING", actor, "Deployment started");
       if (status === "cancelled") await transition(r.id, "DEPLOYMENT_BOOKED", "PASSED", actor, "Booking cancelled — ready to rebook");
@@ -1074,9 +1074,9 @@ function IncidentRow({ request: r, i }: { request: CabRequest; i: Incident }) {
   const editable = i.status !== "resolved" && r.status === "INCIDENT" && can(actor.role, "deployment_coordinator", "developer");
 
   async function resolve() {
-    if (!rc.trim() || !ca.trim()) return toast.error("Root cause and corrective action are required");
+    if (!rc.trim() || !ca.trim()) { toast.error("Root cause and corrective action are required"); return; }
     const { error } = await supabase.from("incidents").update({ root_cause: rc, corrective_action: ca, scope_changed: scope, status: "resolved" }).eq("id", i.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     try {
       if (scope) await transition(r.id, "INCIDENT", "DOCUMENTS_PENDING", actor, "RCA complete — scope changed, re-CAB required", rc);
       else await transition(r.id, "INCIDENT", "PASSED", actor, "RCA complete — ready to rebook deployment", rc);
