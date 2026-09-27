@@ -23,7 +23,7 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Synthetic historical analytics tests
         run: npx vitest run src/lib/historical.test.ts
       - name: Production build
