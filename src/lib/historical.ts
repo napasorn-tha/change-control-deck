@@ -117,13 +117,13 @@ export function multiRound(rounds: HistRound[]) {
 const TH_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
 /** "2026-09" -> "ก.ย. 69" (Buddhist Era, 2-digit). */
 export function thaiMonthLabel(ym: string) {
-  const [y, m] = ym.split("-").map(Number);
-  return `${TH_MONTHS[m - 1]} ${String((y + 543) % 100).padStart(2, "0")}`;
+  const [y = 0, m = 1] = ym.split("-").map(Number);
+  return `${TH_MONTHS[m - 1] ?? "?"} ${String((y + 543) % 100).padStart(2, "0")}`;
 }
 export function monthRange(first: string, last: string) {
   const out: string[] = [];
-  let [y, m] = first.split("-").map(Number);
-  const [ly, lm] = last.split("-").map(Number);
+  let [y = 0, m = 1] = first.split("-").map(Number);
+  const [ly = 0, lm = 1] = last.split("-").map(Number);
   while (y < ly || (y === ly && m <= lm)) {
     out.push(`${y}-${String(m).padStart(2, "0")}`);
     m++;
@@ -154,7 +154,7 @@ export function computeAnalytics(s: Snapshot) {
     ...s.rounds.map((r) => r.cab_date).filter((v): v is string => !!v)]
     .map((d) => d.slice(0, 7)).sort();
   const monthly: MonthlyRow[] = months.length
-    ? monthRange(months[0], months[months.length - 1]).map((m) => {
+    ? monthRange(months[0]!, months[months.length - 1]!).map((m) => {
         const row: MonthlyRow = { month: m, label: thaiMonthLabel(m), A: 0, B: 0, C: 0, E: 0, DFG: 0 };
         for (const i of dqDated) {
           if (i.source_date!.slice(0, 7) !== m) continue;
