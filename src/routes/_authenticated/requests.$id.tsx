@@ -168,6 +168,25 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   const refresh = useInvalidateAll();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const { actualRole } = useAuth();
+  const refreshAI = useInvalidateAll();
+  const [externalAIApproved, setExternalAIApproved] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const mayAnalyze = actualRole === "admin" || actualRole === "cab_reviewer";
+  async function runAI() {
+    if (!readyForAI || !mayAnalyze || !externalAIApproved || aiBusy) return;
+    setAiBusy(true);
+    try {
+      const { error } = await supabase.functions.invoke("analyze-cab", {
+        body: { request_id: r.id, external_ai_approved: true },
+      });
+      if (error) throw error;
+      toast.success("AI evidence review saved. Final CAB decision remains with the reviewer.");
+      await refreshAI();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not complete AI analysis. Check the Edge Function and GROQ_API_KEY.");
+    } finally { setAiBusy(false); }
+  }
   const uploaded = documents.filter((d) => d.file_path).length;
   const allDocs = uploaded >= DOC_TYPES.length;
   const qaReady = isQaGatePassed(r);
@@ -624,6 +643,28 @@ function AIPreCabAnalysisCard({
           </p>
         </div>
       </div>
+
+      {mayAnalyze && <div className="mb-4 rounded-md border border-border bg-surface p-4">
+        <p className="text-sm font-semibold">Run AI evidence review · External provider pilot</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          The server reads five private evidence files, extracts supported PDF/text content,
+          and sends the extracted text to Groq only after explicit permission.
+          Text PDFs, TXT, MD, CSV and JSON are supported in this pilot; scanned PDFs,
+          images and ZIP/code binaries require a separate extraction step.
+          If a mandatory file cannot be read completely, analysis is blocked rather than presenting a partial review as complete.
+        </p>
+        <label className="mt-3 flex items-start gap-2 text-xs">
+          <input type="checkbox" checked={externalAIApproved}
+            onChange={(e) => setExternalAIApproved(e.target.checked)} className="mt-0.5" />
+          <span>I have authorization to send the extracted content of this CAB evidence package to the external Groq AI service.</span>
+        </label>
+        <button type="button" disabled={!readyForAI || !externalAIApproved || aiBusy}
+          onClick={() => void runAI()}
+          className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">
+          {aiBusy ? "Running AI…" : "Run AI Analysis"}
+        </button>
+        {!readyForAI && <p className="mt-2 text-xs text-muted-foreground">Five evidences + QA Gate must pass first.</p>}
+      </div>}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-md border border-border p-4">
