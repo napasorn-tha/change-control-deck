@@ -76,8 +76,34 @@ describe("historical analytics", () => {
     expect(validateSnapshot(a, { analyzedIssueRows: 7, rejectEvents: 3 })).toEqual([]);
     expect(validateSnapshot(a, { rejectEvents: 4 }).length).toBe(1);
   });
+
+  it("blocks publication when a rejected review has no verified CAB date", () => {
+    const undated: Snapshot = {
+      ...fx,
+      rounds: [...fx.rounds, { cr_number: "X5", round_no: 1, cab_date: null,
+        decision: "REJECTED", reject_type: "Implied" }],
+    };
+    const result = computeAnalytics(undated);
+    expect(result.rejected.events).toBe(3);
+    expect(result.rejected.undatedRounds).toBe(1);
+    expect(validateSnapshot(result).some((error) => error.includes("lack verified dates"))).toBe(true);
+  });
+
+  it("includes zero-DQ months at the start of a snapshot when CAB issue activity exists", () => {
+    const extra: Snapshot = {
+      ...fx,
+      issues: [...fx.issues, { source_row: 10, cr_number: "X0",
+        original_remark: "approved administrative note", primary_category: "O",
+        source_date: "2024-12-15", confidence: "High", is_rejected: false }],
+    };
+    const result = computeAnalytics(extra);
+    expect(result.monthly[0]).toMatchObject({
+      month: "2024-12", A: 0, B: 0, C: 0, E: 0, DFG: 0,
+    });
+  });
+
   it("unknown category fails validation", () => {
-    const b = computeAnalytics({ ...fx, issues: [...fx.issues, { ...fx.issues[0], source_row: 99, primary_category: "Z" }] });
+    const b = computeAnalytics({ ...fx, issues: [...fx.issues, { ...fx.issues[0]!, source_row: 99, primary_category: "Z" }] });
     expect(validateSnapshot(b).length).toBeGreaterThan(0);
   });
   it("explicit wording detection", () => {

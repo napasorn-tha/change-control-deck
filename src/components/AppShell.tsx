@@ -48,6 +48,7 @@ function navFor(role: AppRole | null): NavItem[] {
       },
       { label: "High Risk Changes", to: "/requests", search: { scope: "risk" }, icon: ShieldAlert },
       { label: "Review History", to: "/requests", search: { scope: "history" }, icon: History },
+      { label: "Historical CAB Intelligence", to: "/historical", icon: History },
       { label: "Projects", to: "/projects", icon: FolderKanban },
       { label: "Users & Roles", to: "/admin/users", icon: Users },
       { label: "Activity Log", to: "/activity", icon: Activity },
@@ -77,11 +78,13 @@ function navFor(role: AppRole | null): NavItem[] {
       },
       { label: "Incidents", to: "/incidents", icon: AlertTriangle },
       { label: "History", to: "/deployments", search: { status: "completed" }, icon: History },
+      { label: "Historical CAB Intelligence", to: "/historical", icon: History },
     ];
   }
   if (role === "executive" || role === "admin") {
     return [
       { label: "CAB Control Tower", to: "/dashboard", icon: GaugeCircle },
+      { label: "Historical CAB Intelligence", to: "/historical", icon: History },
       { label: "All CAB Requests", to: "/requests", icon: ListChecks },
       { label: "Deployment Calendar", to: "/deployments/calendar", icon: CalendarDays },
       { label: "Deployments", to: "/deployments", icon: Truck },

@@ -46,7 +46,7 @@ function ProjectsPage() {
     const projectName = name.trim();
 
     if (!projectCode || !projectName) {
-      return toast.error("Project code and project name are required");
+      { toast.error("Project code and project name are required"); return; }
     }
 
     setSaving(true);
@@ -58,7 +58,7 @@ function ProjectsPage() {
 
     if (error) {
       setSaving(false);
-      return toast.error(error.message);
+      { toast.error(error.message); return; }
     }
 
     setCode("");

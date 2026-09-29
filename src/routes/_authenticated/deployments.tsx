@@ -30,13 +30,10 @@ const DEPLOYMENT_STATUSES: DeploymentStatus[] = [
 export const Route = createFileRoute("/_authenticated/deployments")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { status?: DeploymentStatus } => ({
-    status: DEPLOYMENT_STATUSES.includes(
-      search["status"] as DeploymentStatus,
-    )
-      ? (search["status"] as DeploymentStatus)
-      : undefined,
-  }),
+  ): { status?: DeploymentStatus } => {
+    const status = search["status"] as DeploymentStatus;
+    return DEPLOYMENT_STATUSES.includes(status) ? { status } : {};
+  },
 
   head: () => ({
     meta: [

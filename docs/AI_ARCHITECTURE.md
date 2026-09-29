@@ -132,3 +132,23 @@ The next live integration can be developed before the final Remark taxonomy is a
 6. synthetic cross-document test
 
 Historical Remark intelligence can be added afterward without changing the core architecture.
+
+## Historical CAB Intelligence (owner-confirmed specification, 2026-09-26)
+
+This is an **independent historical analytical layer**, not a change to the operational approval workflow. The source register, analysis workbook and optional one-page HTML report are distinct artifacts. No actual-company rows, names or file contents belong in this public prototype. The newly added hist_* tables and deterministic analytics are infrastructure; the currently enabled UI reads only a validated, published snapshot and correctly shows an empty state before import. Admin XLSX import is deliberately disabled until parsing, source authorization, pre-commit validation and transactional rollback are completed.
+
+Historical records distinguish (1) actual CAB review rounds and decisions, (2) deployment attempts and observed outcomes, and (3) individual remark issues. A conditional CAB approval followed by failed deployment is not a CAB rejection. A rejected AM session and approved PM session of the same date are two rounds and one distinct (CR, CAB date) rejection event. Explicit/Implied describes the words in the original Remark; later human confirmation changes confidence/provenance, not immutable source text. Special CAB dates and out-of-session rounds require verification. The A–P taxonomy is maintained in hist_taxonomy; see REMARK_SCHEMA_TEMPLATE.md for detailed meanings, date parsing, F1–F4 flags and reconciliation checks.
+
+### Live AI pipeline versus deterministic historical reporting
+
+The future Groq/gpt-oss-120b pipeline is a *proposed* reasoning provider, not a live deployed reader of private company documents. Extract data using bounded parsers; retain evidence and provenance; produce structured LLM proposals (summary, missing facts, cross-document inconsistencies and risk signals) for human review. Do not hand complete original PDFs/spreadsheets to an external LLM without explicit organizational data-handling approval. Never expose API secrets in client-side code or logs.
+
+The historical dashboard is primarily deterministic: issue-level category grouping, monthly BE trend, unique rejected review dates and repeat rounds. Validate category sums, A–G dated+undated totals, unique reject-event totals against 3_Reject_Count, and multi-round consistency against 4_Multi_Round before publishing. An undated rejected round or mismatch blocks publishing; never manufacture numbers to fill a gap. Mark category O deploy-plan/time as status notes, not automatically realized defects, and disclose the possibly incomplete latest month and dependence on review-detail intensity.
+
+Existing live request readiness still uses the five mandatory evidences plus the QA gate. AI may analyze context; it must not bypass a deterministic gate, overwrite human-verified remarks, silently mark a CR as approved or authorize a deployment. CAB decisions remain human-owned.
+
+### Permissions and status
+
+Database-level RLS restricts historical writes to admin, with reviewers/coordinators/executives/admin viewing authorized published snapshots. Demo-role switching is presentation-only and does not grant data access. Additional production security hardening remains required for the pre-existing operational tables, formal enterprise SSO, storage validation, RLS, observability and approved external-AI data use.
+
+Implemented in first phase: historical tables/RLS; original remark immutability and deduplication; deterministic calculation engine; synthetic edge-case tests. Added in feature branch: snapshot reader and Historical CAB Intelligence report screen, safe empty state, and updated docs. Not yet live/verified: approved XLSX importer, Groq integration, and full end-to-end production security/UAT.

@@ -85,7 +85,7 @@ function UsersRolesPage() {
 
   async function changeRole(userId: string, role: AppRole) {
     if (userId === user?.id) {
-      return toast.error("Keep your own account as Admin while managing roles.");
+      { toast.error("Keep your own account as Admin while managing roles."); return; }
     }
 
     const { error: deleteError } = await supabase
@@ -93,13 +93,13 @@ function UsersRolesPage() {
       .delete()
       .eq("user_id", userId);
 
-    if (deleteError) return toast.error(deleteError.message);
+    if (deleteError) { toast.error(deleteError.message); return; }
 
     const { error: insertError } = await supabase
       .from("user_roles")
       .insert({ user_id: userId, role });
 
-    if (insertError) return toast.error(insertError.message);
+    if (insertError) { toast.error(insertError.message); return; }
 
     await queryClient.invalidateQueries({ queryKey: ["admin-users-roles"] });
     toast.success(`Role updated to ${ROLE_LABEL[role]}`);
