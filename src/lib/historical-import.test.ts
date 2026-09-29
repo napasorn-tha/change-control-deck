@@ -10,7 +10,7 @@ function fixture() {
     ["CR-TEST-001", "A. Data type", "Y", "ไม่ผ่าน data type", "Explicit", "01/09/2026", "High", "Remark (#n)"],
     ["CR-TEST-002", "O. Deploy plan/time", "N", "Tentative deploy", "-", "", "Med", "N/A"],
   ];
-  const category = [["หมวด", "จำนวนประเด็น"]];
+  const category: Array<Array<string | number>> = [["หมวด", "จำนวนประเด็น"]];
   for (const c of "ABCDEFGHIJKLMNOP") category.push([c + ". Demo category", c === "A" || c === "O" ? 1 : 0]);
   return [
     { sheet: "README", data: [["วันที่อ้างอิงการวิเคราะห์"], ["26/09/2026"]] },
