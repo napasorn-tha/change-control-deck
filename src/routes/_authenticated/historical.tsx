@@ -7,6 +7,7 @@ import {
 import { AlertTriangle, Archive, FileLock2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHistoricalSnapshot } from "@/lib/historical-data";
+import { HistoricalImportPanel } from "@/components/cab/HistoricalImportPanel";
 import { GROUP_LABEL, TAXONOMY, type GroupCode } from "@/lib/historical";
 
 export const Route = createFileRoute("/_authenticated/historical")({
@@ -117,17 +118,7 @@ function HistoricalPage() {
           validate a source workbook and publish an approved snapshot before historical analytics are shown.
           No company records are embedded in the public app.
         </p>
-        {actualRole === "admin" && (
-          <div className="mt-5 rounded-md border border-border bg-surface p-4">
-            <p className="text-sm font-medium">Historical dataset import</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Import not yet connected. The XLSX parser, pre-commit reconciliation and transactional
-              import must be implemented and security-tested before enabling uploads.
-            </p>
-            <button type="button" className="mt-3 cursor-not-allowed rounded-md bg-secondary px-4 py-2 text-sm text-muted-foreground"
-              disabled title="Import not yet connected">Import XLSX — not yet connected</button>
-          </div>
-        )}
+        {actualRole === "admin" && <HistoricalImportPanel />}
       </section>
     </div>
   );
@@ -290,10 +281,7 @@ function HistoricalPage() {
           </ul>
         </Panel>
       </div>
-      {actualRole === "admin" && <p className="mt-5 text-xs text-muted-foreground">
-        Admin import: not yet connected. New datasets must pass schema, source-permission,
-        security and cross-sheet reconciliation checks before this view can publish them.
-      </p>}
+      {actualRole === "admin" && <HistoricalImportPanel />}
     </div>
   );
 }
