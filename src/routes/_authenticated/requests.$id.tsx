@@ -168,25 +168,6 @@ function NextAction({ request: r, documents, conditions, risk }: { request: CabR
   const refresh = useInvalidateAll();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
-  const { actualRole } = useAuth();
-  const refreshAI = useInvalidateAll();
-  const [externalAIApproved, setExternalAIApproved] = useState(false);
-  const [aiBusy, setAiBusy] = useState(false);
-  const mayAnalyze = actualRole === "admin" || actualRole === "cab_reviewer";
-  async function runAI() {
-    if (!readyForAI || !mayAnalyze || !externalAIApproved || aiBusy) return;
-    setAiBusy(true);
-    try {
-      const { error } = await supabase.functions.invoke("analyze-cab", {
-        body: { request_id: r.id, external_ai_approved: true },
-      });
-      if (error) throw error;
-      toast.success("AI evidence review saved. Final CAB decision remains with the reviewer.");
-      await refreshAI();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not complete AI analysis. Check the Edge Function and GROQ_API_KEY.");
-    } finally { setAiBusy(false); }
-  }
   const uploaded = documents.filter((d) => d.file_path).length;
   const allDocs = uploaded >= DOC_TYPES.length;
   const qaReady = isQaGatePassed(r);
@@ -607,6 +588,25 @@ function AIPreCabAnalysisCard({
   const documentsReady = uploaded >= DOC_TYPES.length;
   const qaReady = isQaGatePassed(r);
   const readyForAI = documentsReady && qaReady;
+  const { actualRole } = useAuth();
+  const refreshAI = useInvalidateAll();
+  const [externalAIApproved, setExternalAIApproved] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const mayAnalyze = actualRole === "admin" || actualRole === "cab_reviewer";
+  async function runAI() {
+    if (!readyForAI || !mayAnalyze || !externalAIApproved || aiBusy) return;
+    setAiBusy(true);
+    try {
+      const { error } = await supabase.functions.invoke("analyze-cab", {
+        body: { request_id: r.id, external_ai_approved: true },
+      });
+      if (error) throw error;
+      toast.success("AI evidence review saved. Final CAB decision remains with the reviewer.");
+      await refreshAI();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not complete AI analysis. Check the Edge Function and GROQ_API_KEY.");
+    } finally { setAiBusy(false); }
+  }
   const status = analysis?.status ?? "NOT_ANALYZED";
 
   const badge =
