@@ -1065,6 +1065,8 @@ export type Database = {
       }
     }
     Functions: {
+      hist_import_snapshot: { Args: { p: Json }; Returns: string }
+      hist_publish_snapshot: { Args: { p_id: string }; Returns: boolean }
       can_view_history: { Args: { _uid: string }; Returns: boolean }
       has_role: {
         Args: {
