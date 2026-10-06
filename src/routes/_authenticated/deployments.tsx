@@ -183,6 +183,7 @@ function DeploymentsPage() {
                   <th className="px-4 py-3">Coordinator</th>
                   <th className="px-4 py-3">Attempt</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Outcome</th>
                 </tr>
               </thead>
 
@@ -240,6 +241,9 @@ function DeploymentsPage() {
                         {item.status.charAt(0).toUpperCase() +
                           item.status.slice(1)}
                       </Pill>
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.outcome ? <Pill tone={item.outcome === "SUCCESS" ? "success" : item.outcome === "PARTIAL_SUCCESS" || item.outcome === "POSTPONED" ? "warning" : "danger"}>{item.outcome.replaceAll("_", " ")}</Pill> : <span className="text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 ))}
