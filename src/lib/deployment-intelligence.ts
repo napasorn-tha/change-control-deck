@@ -64,7 +64,10 @@ export const DATA_TYPE_STANDARD_RULES: StandardRule[] = [
 export function findDataTypeStandards(columnName: string) {
   const value = columnName.trim();
   if (!value) return [];
-  return DATA_TYPE_STANDARD_RULES.filter((rule) => rule.columnPattern.test(value));
+  const generic = new Set(["numeric-id", "text"]);
+  return DATA_TYPE_STANDARD_RULES
+    .filter((rule) => rule.columnPattern.test(value))
+    .sort((a, b) => Number(generic.has(a.id)) - Number(generic.has(b.id)));
 }
 
 function normalizeType(value: string) {
