@@ -359,6 +359,162 @@ export type Database = {
           },
         ]
       }
+      deployment_issues: {
+        Row: {
+          category_code: string
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          deployment_id: string
+          detected_at: string
+          id: string
+          issue_text: string
+          request_id: string
+          resolution: string | null
+          resolution_status: string
+          resolved_at: string | null
+          root_cause: string | null
+          source_kind: string
+          taxonomy_domain: string
+          taxonomy_version: string
+          updated_at: string
+        }
+        Insert: {
+          category_code: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          deployment_id: string
+          detected_at?: string
+          id?: string
+          issue_text: string
+          request_id: string
+          resolution?: string | null
+          resolution_status?: string
+          resolved_at?: string | null
+          root_cause?: string | null
+          source_kind?: string
+          taxonomy_domain?: string
+          taxonomy_version?: string
+          updated_at?: string
+        }
+        Update: {
+          category_code?: string
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          deployment_id?: string
+          detected_at?: string
+          id?: string
+          issue_text?: string
+          request_id?: string
+          resolution?: string | null
+          resolution_status?: string
+          resolved_at?: string | null
+          root_cause?: string | null
+          source_kind?: string
+          taxonomy_domain?: string
+          taxonomy_version?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployment_issues_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deployment_issues_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "cab_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_requests: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          deployment_id: string | null
+          environment: string
+          estimated_duration_minutes: number | null
+          execution_steps: string | null
+          external_ref: string | null
+          id: string
+          needed_by: string | null
+          objective: string
+          preferred_window: string | null
+          priority: string
+          request_date: string
+          request_id: string
+          request_type: string
+          status: string
+          target_objects: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          deployment_id?: string | null
+          environment?: string
+          estimated_duration_minutes?: number | null
+          execution_steps?: string | null
+          external_ref?: string | null
+          id?: string
+          needed_by?: string | null
+          objective: string
+          preferred_window?: string | null
+          priority?: string
+          request_date?: string
+          request_id: string
+          request_type: string
+          status?: string
+          target_objects?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          deployment_id?: string | null
+          environment?: string
+          estimated_duration_minutes?: number | null
+          execution_steps?: string | null
+          external_ref?: string | null
+          id?: string
+          needed_by?: string | null
+          objective?: string
+          preferred_window?: string | null
+          priority?: string
+          request_date?: string
+          request_id?: string
+          request_type?: string
+          status?: string
+          target_objects?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "deployments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "cab_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deployments: {
         Row: {
           attempt: number
@@ -369,6 +525,7 @@ export type Database = {
           deploy_date: string
           environment: string
           id: string
+          outcome: string | null
           notes: string | null
           request_id: string
           started_at: string | null
@@ -386,6 +543,7 @@ export type Database = {
           deploy_date: string
           environment?: string
           id?: string
+          outcome?: string | null
           notes?: string | null
           request_id: string
           started_at?: string | null
@@ -403,6 +561,7 @@ export type Database = {
           deploy_date?: string
           environment?: string
           id?: string
+          outcome?: string | null
           notes?: string | null
           request_id?: string
           started_at?: string | null
@@ -1065,6 +1224,8 @@ export type Database = {
       }
     }
     Functions: {
+      hist_import_snapshot: { Args: { p: Json }; Returns: string }
+      hist_publish_snapshot: { Args: { p_id: string }; Returns: boolean }
       can_view_history: { Args: { _uid: string }; Returns: boolean }
       has_role: {
         Args: {

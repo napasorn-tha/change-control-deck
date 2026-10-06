@@ -10,10 +10,14 @@ import {
   useActivity,
   useInvalidateAll,
   useRequestBundle,
+  useRequestDeploymentIntelligence,
+  useDeploymentIntelligence,
   type CabDocument,
   type CabRequest,
   type Condition,
   type Deployment,
+  type DeploymentIssue,
+  type ServiceRequest,
   type Incident,
   type Risk,
   type AIAnalysis,
@@ -41,6 +45,7 @@ import {
   type ReviewSection,
 } from "@/lib/cab";
 import { can, transition, type Actor } from "@/lib/workflow";
+import { DEPLOYMENT_CATEGORIES, SERVICE_REQUEST_TYPES } from "@/lib/deployment-intelligence";
 import { Card, ErrorState, Field, Loading, PageHeader, Pill, ProgressBar, RiskPill, StatusPill } from "@/components/cab/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,6 +158,7 @@ function RequestDetail() {
           {(r.status === "PASSED" || data.deployments.length > 0) && (
             <DeploymentCard request={r} deployments={data.deployments} />
           )}
+          {data.deployments.length > 0 && <DeploymentLearningCard request={r} deployments={data.deployments} />}
           {data.incidents.length > 0 && <IncidentCard request={r} incidents={data.incidents} />}
           <ActivityCard id={r.id} />
         </div>
@@ -588,6 +594,30 @@ function AIPreCabAnalysisCard({
   const documentsReady = uploaded >= DOC_TYPES.length;
   const qaReady = isQaGatePassed(r);
   const readyForAI = documentsReady && qaReady;
+  const depIntel = useDeploymentIntelligence();
+  const depTop = DEPLOYMENT_CATEGORIES.map((category) => ({
+    ...category,
+    count: (depIntel.data?.issues ?? []).filter((issue) => issue.category_code === category.code).length,
+  })).filter((row) => row.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
+  const { actualRole } = useAuth();
+  const refreshAI = useInvalidateAll();
+  const [externalAIApproved, setExternalAIApproved] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const mayAnalyze = actualRole === "admin" || actualRole === "cab_reviewer";
+  async function runAI() {
+    if (!readyForAI || !mayAnalyze || !externalAIApproved || aiBusy) return;
+    setAiBusy(true);
+    try {
+      const { error } = await supabase.functions.invoke("analyze-cab", {
+        body: { request_id: r.id, external_ai_approved: true },
+      });
+      if (error) throw error;
+      toast.success("AI evidence review saved. Final CAB decision remains with the reviewer.");
+      await refreshAI();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not complete AI analysis. Check the Edge Function and GROQ_API_KEY.");
+    } finally { setAiBusy(false); }
+  }
   const status = analysis?.status ?? "NOT_ANALYZED";
 
   const badge =
@@ -624,6 +654,42 @@ function AIPreCabAnalysisCard({
           </p>
         </div>
       </div>
+
+      <div className="mb-4 rounded-md border border-border bg-surface p-4">
+        <p className="text-sm font-semibold">Historical Deployment Signal</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Local advisory context only. DEP taxonomy is separate from CAB taxonomy; counts below are not failure probabilities and are not a CAB decision.
+        </p>
+        {depTop.length ? <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {depTop.map((row) => <div key={row.code} className="rounded-md border border-border bg-background p-3">
+            <p className="font-mono text-xs font-semibold">DEP-{row.code} · {row.count} issue{row.count === 1 ? "" : "s"}</p>
+            <p className="mt-1 text-xs font-medium">{row.name}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Suggested pre-check: {row.description}</p>
+          </div>)}
+        </div> : <p className="mt-3 text-xs text-muted-foreground">No operational DEP issues have been recorded yet.</p>}
+      </div>
+
+      {mayAnalyze && <div className="mb-4 rounded-md border border-border bg-surface p-4">
+        <p className="text-sm font-semibold">Run AI evidence review · External provider pilot</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          The server reads five private evidence files, extracts supported PDF/text content,
+          and sends the extracted text to Groq only after explicit permission.
+          Text PDFs, TXT, MD, CSV and JSON are supported in this pilot; scanned PDFs,
+          images and ZIP/code binaries require a separate extraction step.
+          If a mandatory file cannot be read completely, analysis is blocked rather than presenting a partial review as complete.
+        </p>
+        <label className="mt-3 flex items-start gap-2 text-xs">
+          <input type="checkbox" checked={externalAIApproved}
+            onChange={(e) => setExternalAIApproved(e.target.checked)} className="mt-0.5" />
+          <span>I have authorization to send the extracted content of this CAB evidence package to the external Groq AI service.</span>
+        </label>
+        <button type="button" disabled={!readyForAI || !externalAIApproved || aiBusy}
+          onClick={() => void runAI()}
+          className="mt-3 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">
+          {aiBusy ? "Running AI…" : "Run AI Analysis"}
+        </button>
+        {!readyForAI && <p className="mt-2 text-xs text-muted-foreground">Five evidences + QA Gate must pass first.</p>}
+      </div>}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-md border border-border p-4">
@@ -987,10 +1053,11 @@ function DeploymentCard({ request: r, deployments }: { request: CabRequest; depl
     await refresh();
   }
 
-  async function setDep(status: "deploying" | "completed" | "failed" | "cancelled") {
+  async function setDep(status: "deploying" | "completed" | "failed" | "cancelled", outcome?: Deployment["outcome"]) {
     if (!current) return;
     const now = new Date().toISOString();
     const upd: Partial<Deployment> = { status };
+    if (outcome) upd.outcome = outcome;
     if (status === "deploying") upd.started_at = now;
     if (status === "completed" || status === "failed") upd.completed_at = now;
     const { error } = await supabase.from("deployments").update(upd).eq("id", current.id);
@@ -1015,7 +1082,7 @@ function DeploymentCard({ request: r, deployments }: { request: CabRequest; depl
           {deployments.map((d) => (
             <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">
               <span>Attempt {d.attempt} · {ENVIRONMENTS.find((e) => e.value === d.environment)?.label} · {fmtDateTime(d.window_start)} – {new Date(d.window_end).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
-              <Pill tone={d.status === "completed" ? "success" : d.status === "failed" ? "danger" : d.status === "deploying" ? "teal" : "info"}>{d.status}</Pill>
+              <Pill tone={d.status === "completed" ? "success" : d.status === "failed" ? "danger" : d.status === "deploying" ? "teal" : "info"}>{d.outcome ?? d.status}</Pill>
             </li>
           ))}
         </ul>
@@ -1053,6 +1120,151 @@ function DeploymentCard({ request: r, deployments }: { request: CabRequest; depl
       )}
     </Card>
   );
+}
+
+
+/* ---------------- Deployment learning loop ---------------- */
+
+function DeploymentLearningCard({ request: r, deployments }: { request: CabRequest; deployments: Deployment[] }) {
+  const actor = useActor();
+  const refresh = useInvalidateAll();
+  const intel = useRequestDeploymentIntelligence(r.id);
+  const current = deployments[0];
+  const editableIssue = can(actor.role, "deployment_coordinator", "developer", "cab_reviewer");
+  const editableSr = can(actor.role, "deployment_coordinator", "developer");
+  const [issueForm, setIssueForm] = useState({ category: "A", issue: "", rootCause: "", resolution: "", status: "open" });
+  const [srForm, setSrForm] = useState({ type: "PATCH_DATA", priority: "MEDIUM", environment: current?.environment ?? "production", externalRef: "", objective: "", targetObjects: "", steps: "" });
+
+  async function addIssue() {
+    if (!current || !issueForm.issue.trim()) { toast.error("Deployment attempt and issue are required"); return; }
+    const resolved = issueForm.status === "resolved";
+    const { error } = await supabase.from("deployment_issues").insert({
+      deployment_id: current.id, request_id: r.id, category_code: issueForm.category,
+      issue_text: issueForm.issue.trim(), root_cause: issueForm.rootCause.trim() || null,
+      resolution: issueForm.resolution.trim() || null, resolution_status: issueForm.status,
+      resolved_at: resolved ? new Date().toISOString() : null,
+      created_by: actor.id, created_by_name: actor.name,
+    });
+    if (error) { toast.error(error.message); return; }
+    await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: "Deployment issue recorded", comment: "DEP-" + issueForm.category + ": " + issueForm.issue.trim() });
+    setIssueForm({ category: "A", issue: "", rootCause: "", resolution: "", status: "open" });
+    toast.success("Deployment issue recorded");
+    await refresh();
+  }
+
+  async function addServiceRequest() {
+    if (!srForm.objective.trim()) { toast.error("Service Request objective is required"); return; }
+    const targets = srForm.targetObjects.split(",").map((x) => x.trim()).filter(Boolean);
+    const { error } = await supabase.from("service_requests").insert({
+      request_id: r.id, deployment_id: current?.id ?? null, request_type: srForm.type,
+      priority: srForm.priority, environment: srForm.environment,
+      external_ref: srForm.externalRef.trim() || null, objective: srForm.objective.trim(),
+      target_objects: targets, execution_steps: srForm.steps.trim() || null,
+      created_by: actor.id, created_by_name: actor.name,
+    });
+    if (error) { toast.error(error.message); return; }
+    await logActivity({ request_id: r.id, actor_id: actor.id, actor_name: actor.name, action: "Post-deploy Service Request linked", comment: srForm.type + ": " + srForm.objective.trim() });
+    setSrForm({ ...srForm, externalRef: "", objective: "", targetObjects: "", steps: "" });
+    toast.success("Post-deploy Service Request added");
+    await refresh();
+  }
+
+  return <Card title="Deployment learning loop" description="Successful deployments can still contain issues. Record Issue → Root Cause → Resolution and link Patch Data / Update Config / Reprocess follow-up.">
+    {intel.isLoading ? <p className="text-sm text-muted-foreground">Loading deployment learning…</p> : intel.error ? <p className="text-sm text-destructive">{String(intel.error)}</p> : <>
+      <div className="space-y-3">
+        {(intel.data?.issues ?? []).map((i) => <DeploymentIssueRow key={i.id} issue={i} requestId={r.id} />)}
+        {!intel.data?.issues.length && <p className="text-sm text-muted-foreground">No DEP issue recorded for this CAB yet.</p>}
+      </div>
+
+      {editableIssue && current && <div className="mt-4 rounded-md border border-border bg-surface p-4">
+        <p className="text-sm font-semibold">+ Record deployment issue</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <label className="text-xs">DEP category
+            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={issueForm.category} onChange={(e) => setIssueForm({ ...issueForm, category: e.target.value })}>
+              {DEPLOYMENT_CATEGORIES.map((c) => <option key={c.code} value={c.code}>DEP-{c.code} · {c.name}</option>)}
+            </select>
+          </label>
+          <label className="text-xs">Resolution status
+            <select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={issueForm.status} onChange={(e) => setIssueForm({ ...issueForm, status: e.target.value })}>
+              <option value="open">Open</option><option value="follow_up">Follow-up</option><option value="resolved">Resolved</option>
+            </select>
+          </label>
+          <div className="text-xs text-muted-foreground">Linked to Attempt {current.attempt}<br />Outcome: {current.outcome ?? current.status}</div>
+        </div>
+        <Textarea className="mt-3" rows={2} placeholder="Issue found during deployment" value={issueForm.issue} onChange={(e) => setIssueForm({ ...issueForm, issue: e.target.value })} />
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Textarea rows={2} placeholder="Root cause (optional)" value={issueForm.rootCause} onChange={(e) => setIssueForm({ ...issueForm, rootCause: e.target.value })} />
+          <Textarea rows={2} placeholder="Resolution / action taken" value={issueForm.resolution} onChange={(e) => setIssueForm({ ...issueForm, resolution: e.target.value })} />
+        </div>
+        <div className="mt-3 flex justify-end"><Button size="sm" onClick={() => void addIssue()}>Add issue</Button></div>
+      </div>}
+
+      <div className="mt-5 border-t border-border pt-4">
+        <p className="text-sm font-semibold">Post-deploy Service Requests</p>
+        <div className="mt-2 space-y-2">{(intel.data?.serviceRequests ?? []).map((s) => <ServiceRequestRow key={s.id} sr={s} requestId={r.id} />)}
+          {!intel.data?.serviceRequests.length && <p className="text-sm text-muted-foreground">No linked SR / Patch / Reprocess request.</p>}
+        </div>
+        {editableSr && <div className="mt-4 grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-3">
+          <label className="text-xs">Type<select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={srForm.type} onChange={(e) => setSrForm({ ...srForm, type: e.target.value })}>
+            {SERVICE_REQUEST_TYPES.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
+          </select></label>
+          <label className="text-xs">Priority<select className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={srForm.priority} onChange={(e) => setSrForm({ ...srForm, priority: e.target.value })}>
+            <option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option>
+          </select></label>
+          <label className="text-xs">External SR / Incident ref<Input className="mt-1" value={srForm.externalRef} onChange={(e) => setSrForm({ ...srForm, externalRef: e.target.value })} placeholder="optional" /></label>
+          <Textarea className="sm:col-span-3" rows={2} placeholder="Objective — e.g. patch duplicated records then rerun the job" value={srForm.objective} onChange={(e) => setSrForm({ ...srForm, objective: e.target.value })} />
+          <Input className="sm:col-span-3" placeholder="Target objects, comma separated" value={srForm.targetObjects} onChange={(e) => setSrForm({ ...srForm, targetObjects: e.target.value })} />
+          <Textarea className="sm:col-span-3" rows={2} placeholder="Execution steps / notes" value={srForm.steps} onChange={(e) => setSrForm({ ...srForm, steps: e.target.value })} />
+          <div className="sm:col-span-3 flex justify-end"><Button size="sm" variant="outline" onClick={() => void addServiceRequest()}>Link Service Request</Button></div>
+        </div>}
+      </div>
+    </>}
+  </Card>;
+}
+
+function DeploymentIssueRow({ issue, requestId }: { issue: DeploymentIssue; requestId: string }) {
+  const actor = useActor();
+  const refresh = useInvalidateAll();
+  const [resolution, setResolution] = useState(issue.resolution ?? "");
+  const [rootCause, setRootCause] = useState(issue.root_cause ?? "");
+  const editable = issue.resolution_status !== "resolved" && can(actor.role, "deployment_coordinator", "developer", "cab_reviewer");
+  async function resolve() {
+    if (!resolution.trim()) { toast.error("Resolution is required"); return; }
+    const { error } = await supabase.from("deployment_issues").update({
+      root_cause: rootCause.trim() || null, resolution: resolution.trim(),
+      resolution_status: "resolved", resolved_at: new Date().toISOString(),
+    }).eq("id", issue.id);
+    if (error) { toast.error(error.message); return; }
+    await logActivity({ request_id: requestId, actor_id: actor.id, actor_name: actor.name, action: "Deployment issue resolved", comment: "DEP-" + issue.category_code + ": " + resolution.trim() });
+    toast.success("Deployment issue resolved"); await refresh();
+  }
+  return <div className="rounded-md border border-border p-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">DEP-{issue.category_code} · {DEPLOYMENT_CATEGORIES.find((c) => c.code === issue.category_code)?.name}</p><Pill tone={issue.resolution_status === "resolved" ? "success" : issue.resolution_status === "follow_up" ? "warning" : "danger"}>{issue.resolution_status}</Pill></div>
+    <p className="mt-1">{issue.issue_text}</p>
+    {editable ? <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <Textarea rows={2} placeholder="Root cause" value={rootCause} onChange={(e) => setRootCause(e.target.value)} />
+      <Textarea rows={2} placeholder="Resolution" value={resolution} onChange={(e) => setResolution(e.target.value)} />
+      <div className="sm:col-span-2 flex justify-end"><Button size="sm" onClick={() => void resolve()}>Resolve issue</Button></div>
+    </div> : <>
+      {issue.root_cause && <p className="mt-1 text-xs text-muted-foreground">Root cause: {issue.root_cause}</p>}
+      <p className="mt-1 text-xs">Resolution: {issue.resolution ?? "—"}</p>
+    </>}
+  </div>;
+}
+
+function ServiceRequestRow({ sr, requestId }: { sr: ServiceRequest; requestId: string }) {
+  const actor = useActor(); const refresh = useInvalidateAll();
+  const editable = sr.status !== "COMPLETED" && sr.status !== "CANCELLED" && can(actor.role, "deployment_coordinator", "developer");
+  async function complete() {
+    const { error } = await supabase.from("service_requests").update({ status: "COMPLETED" }).eq("id", sr.id);
+    if (error) { toast.error(error.message); return; }
+    await logActivity({ request_id: requestId, actor_id: actor.id, actor_name: actor.name, action: "Post-deploy Service Request completed", comment: sr.request_type + ": " + sr.objective });
+    toast.success("Service Request completed"); await refresh();
+  }
+  return <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border p-3 text-sm">
+    <div><p className="font-medium">{SERVICE_REQUEST_TYPES.find((x) => x.value === sr.request_type)?.label ?? sr.request_type}{sr.external_ref ? " · " + sr.external_ref : ""}</p><p className="mt-1">{sr.objective}</p><p className="mt-1 text-xs text-muted-foreground">{sr.environment} · {sr.priority}</p></div>
+    <div className="flex items-center gap-2"><Pill tone={sr.status === "COMPLETED" ? "success" : sr.status === "IN_PROGRESS" ? "teal" : "warning"}>{sr.status}</Pill>{editable && <Button size="sm" variant="outline" onClick={() => void complete()}>Complete</Button>}</div>
+  </div>;
 }
 
 /* ---------------- Incident ---------------- */

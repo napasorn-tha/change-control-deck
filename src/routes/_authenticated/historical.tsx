@@ -7,6 +7,7 @@ import {
 import { AlertTriangle, Archive, FileLock2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useHistoricalSnapshot } from "@/lib/historical-data";
+import { HistoricalImportPanel } from "@/components/cab/HistoricalImportPanel";
 import { GROUP_LABEL, TAXONOMY, type GroupCode } from "@/lib/historical";
 
 export const Route = createFileRoute("/_authenticated/historical")({
@@ -117,17 +118,7 @@ function HistoricalPage() {
           validate a source workbook and publish an approved snapshot before historical analytics are shown.
           No company records are embedded in the public app.
         </p>
-        {actualRole === "admin" && (
-          <div className="mt-5 rounded-md border border-border bg-surface p-4">
-            <p className="text-sm font-medium">Historical dataset import</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Import not yet connected. The XLSX parser, pre-commit reconciliation and transactional
-              import must be implemented and security-tested before enabling uploads.
-            </p>
-            <button type="button" className="mt-3 cursor-not-allowed rounded-md bg-secondary px-4 py-2 text-sm text-muted-foreground"
-              disabled title="Import not yet connected">Import XLSX — not yet connected</button>
-          </div>
-        )}
+        {actualRole === "admin" && <HistoricalImportPanel />}
       </section>
     </div>
   );
@@ -161,7 +152,7 @@ function HistoricalPage() {
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Issues / CR with remarks" value={a.totalIssues} detail={a.totalCrs + " unique CR · one row = one issue"} />
-        <SummaryCard label="Data Quality · A–G" value={a.dq.issues} detail={a.dq.crs + " CR · " + fmtPct(a.dq.share) + " of all issue rows"} />
+        <SummaryCard label="Data Quality · CAB-A–G" value={a.dq.issues} detail={a.dq.crs + " CR · " + fmtPct(a.dq.share) + " of all issue rows"} />
         <SummaryCard label="CAB reject events · unique CR + date" value={a.rejected.events}
           detail={a.rejected.crs + " CR · Explicit " + a.rejected.explicit + " / Implied " + a.rejected.implied} danger />
         <SummaryCard label="CR with multiple CAB rounds" value={a.multiRound.count}
@@ -170,11 +161,11 @@ function HistoricalPage() {
 
       <div className="grid gap-5 xl:grid-cols-2">
         <Panel title="1 · What issue categories recur?"
-          subtitle="Issue-level count, grouped by taxonomy. Category O includes scheduling/status notes, not necessarily defects."
+          subtitle="Issue-level count, grouped by taxonomy. CAB-O includes scheduling/status notes, not necessarily defects."
           table={<table className="w-full text-left text-sm">
             <thead><tr className="border-b border-border"><th className="py-2">Category</th><th className="py-2 text-right">Issues</th><th className="py-2 text-right">% of all</th></tr></thead>
             <tbody>{a.byCategory.map((c) => <tr key={c.code} className="border-b border-border">
-              <td className="py-1.5">{c.code} · {c.name}</td><td className="text-right tabular-nums">{c.count}</td><td className="text-right">{fmtPct(c.count / groupTotal)}</td>
+              <td className="py-1.5">CAB-{c.code} · {c.name}</td><td className="text-right tabular-nums">{c.count}</td><td className="text-right">{fmtPct(c.count / groupTotal)}</td>
             </tr>)}
             <tr className="font-semibold"><td className="py-2">Total</td><td className="text-right">{a.totalIssues}</td><td className="text-right">100%</td></tr></tbody>
           </table>}>
@@ -197,16 +188,16 @@ function HistoricalPage() {
         </Panel>
 
         <Panel title="2 · Data Quality issues over time"
-          subtitle="A–G only · CAB source-date month · date-less findings excluded from the chart"
+          subtitle="CAB-A–G only · CAB source-date month · date-less findings excluded from the chart"
           table={<table className="w-full text-left text-sm">
-            <thead><tr className="border-b border-border">{["Month","A","B","C","E","D/F/G","Total"].map((x) => <th key={x} className="py-2 pr-3">{x}</th>)}</tr></thead>
+            <thead><tr className="border-b border-border">{["Month","CAB-A","CAB-B","CAB-C","CAB-E","CAB-D/F/G","Total"].map((x) => <th key={x} className="py-2 pr-3">{x}</th>)}</tr></thead>
             <tbody>{monthRows.map((m) => <tr key={m.month} className="border-b border-border">
               {[m.label,m.A,m.B,m.C,m.E,m.DFG,m.total].map((v,i) => <td key={i} className="py-2 pr-3 tabular-nums">{v}</td>)}
             </tr>)}
               <tr className="font-semibold"><td>Total dated</td>
                 {(["A","B","C","E","DFG","total"] as const).map((key) => <td key={key} className="py-2 pr-3">{monthRows.reduce((n,r) => n + r[key],0)}</td>)}
               </tr>
-              <tr><td colSpan={7} className="py-2 text-muted-foreground">Undated A–G issues: {a.dq.undated}. Dated + undated = {a.dq.issues}.</td></tr>
+              <tr><td colSpan={7} className="py-2 text-muted-foreground">Undated CAB-A–G issues: {a.dq.undated}. Dated + undated = {a.dq.issues}.</td></tr>
             </tbody>
           </table>}>
           {monthRows.length ? <>
@@ -284,16 +275,13 @@ function HistoricalPage() {
             <li>Reject events count distinct (CR, CAB date). Rejected issue rows may exceed review events.</li>
             <li>Explicit/Implied classification follows the original remark's wording; human confirmation changes confidence without rewriting original text.</li>
             <li>Undated issues ({a.undatedIssues}) are excluded from monthly charts, not from overall KPIs.</li>
-            <li>Category O has {a.categoryOCount} administrative deployment-plan/time items; it is not a defect count.</li>
+            <li>CAB-O has {a.categoryOCount} administrative deployment-plan/time items; it is not a defect count.</li>
             <li>Apparent trend changes can reflect CAB review detail and source coverage, not necessarily deterioration in quality.</li>
             <li>Latest month may be incomplete. Historical figures are never merged into live throughput or risk-score metrics.</li>
           </ul>
         </Panel>
       </div>
-      {actualRole === "admin" && <p className="mt-5 text-xs text-muted-foreground">
-        Admin import: not yet connected. New datasets must pass schema, source-permission,
-        security and cross-sheet reconciliation checks before this view can publish them.
-      </p>}
+      {actualRole === "admin" && <HistoricalImportPanel />}
     </div>
   );
 }
