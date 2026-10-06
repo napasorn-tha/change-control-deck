@@ -105,6 +105,7 @@ function navFor(role: AppRole | null): NavItem[] {
     { label: "My CAB Requests", to: "/requests", search: { scope: "mine" }, icon: ListChecks },
     { label: "Create CAB Request", to: "/requests/new", icon: PlusCircle },
     { label: "Documents", to: "/documents", icon: FileStack },
+    { label: "Standards Knowledge", to: "/standards", icon: BookOpenCheck },
     { label: "Projects", to: "/projects", icon: FolderKanban },
     {
       label: "Rework / Actions Required",
