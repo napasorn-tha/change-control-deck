@@ -561,6 +561,7 @@ export type Database = {
           deploy_date?: string
           environment?: string
           id?: string
+          outcome?: string | null
           notes?: string | null
           request_id?: string
           started_at?: string | null
