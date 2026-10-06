@@ -6,6 +6,8 @@ type T = Database["public"]["Tables"];
 export type CabRequest = T["cab_requests"]["Row"];
 export type CabDocument = T["cab_documents"]["Row"];
 export type Deployment = T["deployments"]["Row"];
+export type DeploymentIssue = T["deployment_issues"]["Row"];
+export type ServiceRequest = T["service_requests"]["Row"];
 export type Incident = T["incidents"]["Row"];
 export type Condition = T["cab_conditions"]["Row"];
 export type Decision = T["cab_decisions"]["Row"];
@@ -41,6 +43,45 @@ export function useDeployments() {
           .select("*, cab_requests(request_code, topic, project_code, status)")
           .order("window_start", { ascending: true }),
       ),
+  });
+}
+
+export function useDeploymentIntelligence() {
+  return useQuery({
+    queryKey: ["deployment-intelligence"],
+    queryFn: async () => {
+      const [deployments, issues, serviceRequests] = await Promise.all([
+        supabase.from("deployments")
+          .select("*, cab_requests(request_code, topic, project_code, status)")
+          .order("deploy_date", { ascending: false }),
+        supabase.from("deployment_issues")
+          .select("*, cab_requests(request_code, topic, project_code), deployments(attempt, deploy_date, outcome, status)")
+          .order("detected_at", { ascending: false }),
+        supabase.from("service_requests")
+          .select("*, cab_requests(request_code, topic, project_code), deployments(attempt, deploy_date, outcome)")
+          .order("request_date", { ascending: false }),
+      ]);
+      return {
+        deployments: must(deployments),
+        issues: must(issues),
+        serviceRequests: must(serviceRequests),
+      };
+    },
+  });
+}
+
+export function useRequestDeploymentIntelligence(requestId: string) {
+  return useQuery({
+    queryKey: ["deployment-intelligence", requestId],
+    queryFn: async () => {
+      const [issues, serviceRequests] = await Promise.all([
+        supabase.from("deployment_issues").select("*").eq("request_id", requestId)
+          .order("detected_at", { ascending: false }),
+        supabase.from("service_requests").select("*").eq("request_id", requestId)
+          .order("request_date", { ascending: false }),
+      ]);
+      return { issues: must(issues), serviceRequests: must(serviceRequests) };
+    },
   });
 }
 
