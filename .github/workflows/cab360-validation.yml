@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Synthetic historical analytics tests
-        run: npx vitest run src/lib/historical.test.ts src/lib/historical-import.test.ts
+        run: npx vitest run src/lib/historical.test.ts src/lib/historical-import.test.ts src/lib/deployment-intelligence.test.ts
       - name: Production build
         run: npm run build
       - name: TypeScript diagnostics
