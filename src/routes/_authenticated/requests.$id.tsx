@@ -11,6 +11,7 @@ import {
   useInvalidateAll,
   useRequestBundle,
   useRequestDeploymentIntelligence,
+  useDeploymentIntelligence,
   type CabDocument,
   type CabRequest,
   type Condition,
@@ -593,6 +594,11 @@ function AIPreCabAnalysisCard({
   const documentsReady = uploaded >= DOC_TYPES.length;
   const qaReady = isQaGatePassed(r);
   const readyForAI = documentsReady && qaReady;
+  const depIntel = useDeploymentIntelligence();
+  const depTop = DEPLOYMENT_CATEGORIES.map((category) => ({
+    ...category,
+    count: (depIntel.data?.issues ?? []).filter((issue) => issue.category_code === category.code).length,
+  })).filter((row) => row.count > 0).sort((a, b) => b.count - a.count).slice(0, 3);
   const { actualRole } = useAuth();
   const refreshAI = useInvalidateAll();
   const [externalAIApproved, setExternalAIApproved] = useState(false);
@@ -647,6 +653,20 @@ function AIPreCabAnalysisCard({
             {qaReady ? "Passed" : "Not ready"}
           </p>
         </div>
+      </div>
+
+      <div className="mb-4 rounded-md border border-border bg-surface p-4">
+        <p className="text-sm font-semibold">Historical Deployment Signal</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Local advisory context only. DEP taxonomy is separate from CAB taxonomy; counts below are not failure probabilities and are not a CAB decision.
+        </p>
+        {depTop.length ? <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {depTop.map((row) => <div key={row.code} className="rounded-md border border-border bg-background p-3">
+            <p className="font-mono text-xs font-semibold">DEP-{row.code} · {row.count} issue{row.count === 1 ? "" : "s"}</p>
+            <p className="mt-1 text-xs font-medium">{row.name}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Suggested pre-check: {row.description}</p>
+          </div>)}
+        </div> : <p className="mt-3 text-xs text-muted-foreground">No operational DEP issues have been recorded yet.</p>}
       </div>
 
       {mayAnalyze && <div className="mb-4 rounded-md border border-border bg-surface p-4">
